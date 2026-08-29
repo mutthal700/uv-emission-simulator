@@ -193,22 +193,20 @@ circulation; G1 N/R; G5 no numerical general-ICU differential; G7 none selected.
 
 ## 7. Required by the model, not supplied by this file
 
-| Model term (§12) | Status | Owner |
-|---|---|---|
-| `P_i(t)` filter penetration, size-resolved | Guidelines give classes (MERV-14, EPA10, SUP1, F7, 99 %@5 µm), not efficiency curves. ASHRAE 170-2025 §6.4 topology is not in evidence, so it is not established whether MERV-14 applies to full supply, mixed air or recirculation only. | filter model |
-| `S_i(t)` source terms | not in this file | source/generation model |
-| `k_dep,i` deposition | not in this file | contaminant physics |
-| `C_out,i` outdoor concentrations | not in this file | concentration evidence database |
-| `Q_inf`, `Q_leak` | no leakage parameters in evidence | deferred, master §13 |
-| supply-air state | no ICU supply condition in any source | energy model, from room balances |
-| multi-bed geometry | no verified source | pending acquisition |
+Superseded in part by §10–§15, which record what the source audit of 2026-08-29
+closed and what remains blocked. Terms still owned elsewhere:
 
-Standards still absent from evidence: AusHFG Part E; AS 1668.2:2012/2024;
-FGI 2022 adult ICU room-area clause; ASHRAE 170-2025 §6.4; NBC 2016 Part 8
-Section 3; DIN 1946-4:2018-09 + A1:2025-11; NF S 90-351 normative clauses;
-CSA Z317.2 and CSA Z8000.
+| Model term (§12 of the master) | Owner |
+|---|---|
+| `P_i(t)` filter penetration, size-resolved | filter model; ASHRAE 170-2025 §6.4 topology still absent, so it is not established whether MERV-14 applies to full supply, mixed air or recirculation only |
+| `S_i(t)` for PM, viable and TVOC | source model, via the inversion route of §11 |
+| `C_out,i` outdoor concentrations | five-climate-zone dataset |
+| `Q_leak` | not modelled; exhaust is balanced against outdoor air (A5) and pressure stays a compliance constraint (§6) |
+| multi-bed geometry | no verified source; single-bed only |
 
----
+Standards still absent: AusHFG Part E; AS 1668.2:2012/2024; FGI 2022 adult ICU
+room-area clause; ASHRAE 170-2025 §6.4; NBC 2016 Part 8 Section 3;
+DIN 1946-4:2018-09 + A1:2025-11; NF S 90-351; CSA Z317.2 and CSA Z8000.
 
 ## 8. Sources
 
@@ -295,10 +293,165 @@ rig-matched transient validation at sub-minute resolution.
 
 ---
 
-## 10. Open: the diurnal occupancy profile
+## 10. Build strategy under incomplete ICU evidence
 
-`S_i(t)` requires a time-varying occupancy, and no ICU study in evidence reports
-an activity schedule or activity-resolved emission factors. Recommended route,
-not yet executed, is source reconstruction rather than forward emission
-factors — see the discussion accompanying this revision. Nothing is assumed here
-until that method is agreed and its inputs are sourced.
+The study is **comparative**. That fact decides how much data each term needs:
+
+> A term requires accurate data only if it can change the **ranking** of the
+> guidelines. A term that shifts every scenario by the same amount needs a
+> defensible constant and a sensitivity check, not a precise ICU measurement.
+
+Applying that test:
+
+| Term | Interacts with the control variables? | Data burden |
+|---|---|---|
+| Room mass balance, `Q_s`, `f_OA` | yes — they *are* the control variables | already closed (§1–§4) |
+| CO₂ | yes, via `f_OA` only | closed for the patient class (§11) |
+| Fan and OA-conditioning energy | yes, via `Q_s` and `Q_OA` | code-referenced values suffice (§13) |
+| `k_dep` | yes — relatively more important at low ACH, so it bends the ACH response | generic aerosol literature, not ICU-specific (§12) |
+| Filter `P_i` and PM size distribution | yes — filter classes differ mainly in the fine range, so ranking depends on it | bounding across plausible distributions |
+| Room loads / reheat | only through reheat, which is climate- and latent-driven | bounding analysis (§14) |
+| Occupancy schedule | Stage C only — it is what concentration-responsive control responds to | site-specific, currently blocked |
+| Actual fan and chiller performance | no — same equipment across all scenarios | not required for comparison |
+
+### 10.1 Consequent build order
+
+- **Tier 1 — buildable now, nothing blocked.** Room mass balance, ventilation,
+  `f_OA` sweep, CO₂, fan energy and outdoor-air conditioning energy at
+  code-referenced efficiency. This alone answers, for every guideline, what CO₂
+  it delivers and at what ventilation energy — a complete Stage A result.
+- **Tier 2 — needs generic, obtainable data.** `k_dep`, size-resolved PM and
+  viable transport, filter efficiency curves.
+- **Tier 3 — needs site or equipment data, Stage C only.** Occupancy schedule,
+  measured fan/chiller performance, ICU thermal loads.
+
+Stage A and Stage B are **not blocked** by the missing occupancy schedule,
+because every guideline sees the same occupancy. Only Stage C, where control
+responds to occupancy, requires it.
+
+---
+
+## 11. CO₂ source classes
+
+Per the source audit of 2026-08-29 (`docs/sources/`), patients, staff and
+visitors are separate generation classes and must not be merged.
+
+### 11.1 Patient — direct ICU measurement
+
+Source-reported VCO₂ for mechanically ventilated ICU patients:
+
+| Source | Population | VCO₂ reported |
+|---|---|---|
+| Kagan et al., *Critical Care* 22:186 (2018) | 80 ventilated patients, 497 measurements | 244.5 ± 85.9 mL/min; RQ 0.75 ± 0.07 |
+| Rousing et al., *Ann Intensive Care* 6:16 (2016) | 18 intubated, ventilated | 273 ± 63 mL/min; RQ 0.81 |
+| Altunalan et al., *BMC Anesthesiology* 26:89 (2026) | 23 ventilated, RASS −2 to −4 | 188.362 mL/min baseline; 203.000 during passive movement |
+
+Unit conversions of those source values, labelled as derived, not as reported data:
+
+| Source | VCO₂ (L/s) |
+|---|---|
+| Altunalan baseline | 0.003139 |
+| Altunalan, during passive movement | 0.003383 |
+| Kagan mean | 0.004075 (±0.001432 for ±1 SD) |
+| Rousing mean | 0.004550 (±0.001050) |
+
+### 11.2 Staff and visitors — Persily Table 4
+
+Persily & de Jonge, *Indoor Air* 27:868–879 (2017), Table 4, at 273 K and
+101 kPa. Male 21–<30: 0.0039 L/s at 1.0 met, 0.0048 at 1.2, 0.0056 at 1.4.
+The met level for each activity class is a **declared modelling parameter with a
+sensitivity range**, not a sourced ICU value — ISO 8996:2021 remains blocked and
+no other compendium may be relabelled as ISO 8996.
+
+### 11.3 Consistency check, and its caveat
+
+Measured ICU patient VCO₂ (0.0031–0.0046 L/s) falls inside the Persily 1.0–1.2
+met band (0.0039–0.0048 L/s). The two independent evidence lines agree.
+
+**Caveat before use:** Persily Table 4 is stated at 273 K / 101 kPa, whereas
+clinical indirect calorimetry conventionally reports STPD or BTPS. The reference
+conditions must be reconciled before the two are combined; the agreement above
+is indicative, not a validated equivalence.
+
+### 11.4 Identifiability, and why the single-bed room resolves it
+
+The audit notes correctly that one room-CO₂ observation cannot separately
+identify patient, staff and visitor counts. In this room it largely can, because
+**the patient count is fixed at 1** (§1):
+
+    S_total(t)  = V·dC/dt + Q_OA·(C(t) − C_out(t))
+    S_people(t) = S_total(t) − S_patient          (S_patient known, §11.1)
+    N_staff+visitors(t) = S_people(t) / G_person
+
+Patient and non-patient occupancy separate cleanly. Staff and visitors remain
+unseparated from CO₂ alone, which matters only where their emission rates for
+other pollutants differ.
+
+**Required site input:** whether the ventilator's expiratory path discharges to
+room air. Metabolic VCO₂ becomes a room source only if it does.
+
+---
+
+## 12. Deposition `k_dep`
+
+Now in scope. It is **not** blocked: deposition depends on particle size, room
+surface-to-volume ratio and near-surface turbulence, not on the room being an
+ICU, so the generic aerosol literature applies. Required: a size-resolved
+deposition model with this room's S/V ratio, plus a sensitivity band.
+
+`k_dep` does not cancel across scenarios — at low ACH it is relatively more
+important, so it bends the shape of the concentration-versus-ACH response.
+
+---
+
+## 13. Energy reference values
+
+| Quantity | Value | Source |
+|---|---|---|
+| Air-cooled chiller COP, <260 kWr | 2.8 (IPLV 3.5) | ECBC 2017, §9.4.2.8, Table 9-5 |
+| Air-cooled chiller COP, ≥260 kWr | 3.0 (IPLV 3.7) | ECBC 2017, §9.4.2.8, Table 9-5 |
+| AHU fan mechanical efficiency | 65 % (IE3) / 70 % (IE4) / 75 % (IE4) | ECSBC 2024, §6.3.1, Tables 6.9–6.11 |
+
+These are **code-referenced minima, not measured equipment performance**, and
+must be labelled as such. For a comparison between guidelines that is
+sufficient, because the same equipment serves every scenario. Applicability of
+ECSBC 2024 to a hospital must be established separately — its title states
+commercial and office buildings.
+
+---
+
+## 14. Room thermal loads
+
+Now in scope. No ICU load data is in evidence, and loads matter to the guideline
+comparison through **one mechanism only**: reheat. A latent load in a humid
+climate drives the coil below dewpoint; the air must then be reheated to avoid
+overcooling the room, and that penalty grows with supply flow — so it falls
+hardest on the 10 ac/h scenarios.
+
+Recommended treatment, pending data: run each scenario at zero load and at a
+plausible high load across the five climate zones, and report whether the
+**ranking** of guidelines changes. If it does not, the comparison stands at zero
+load with the insensitivity reported as a result. If it does, the load becomes a
+required input. This converts a missing measurement into a bounded finding.
+
+---
+
+## 15. Blocked, with what would close each
+
+| Item | Status | Required to close |
+|---|---|---|
+| ISO 8996:2021 activity values | blocked | licensed pages of the activity table; no substitute source may be relabelled |
+| ICU event timing | blocked | hospital ICU SOP or IPC manual with unit, document number, revision, effective date, section and approval status |
+| Nonviable ICU PM size distribution | blocked | `dN/dlogDp` or `dM/dlogDp` with instrument channel boundaries, units, sampling duration, position, occupancy and HVAC state |
+| Actual fan total electrical efficiency | blocked | duty-point airflow and pressure, fan and motor model, load fraction, VFD and transmission efficiency |
+| Actual chiller COP | blocked | model, capacity, refrigerant, water and ambient conditions, certified full-load COP and part-load map |
+| Ventilator expiratory discharge path | blocked | site configuration — scavenged or to room air |
+| Victoria ACH | blocked | HTG-2020-004 "Reference table 1", referred to by §4.173 but absent from the supplied PDF |
+
+Viable-aerosol size bins are **closed**: Kim, Kim & Kim, *Industrial Health*
+48(2):236–243 (2010) — six Andersen stages at >7.0, 4.7–7.0, 3.3–4.7, 2.1–3.3,
+1.1–2.1 and 0.65–1.1 µm, with ICU totals of 202 CFU/m³ bacteria (142 respirable)
+and 65 CFU/m³ fungi (47 respirable). Stage 1 is open-ended; any representative
+diameter for it is a modelling choice, not a measurement. Stage-specific
+distributions are graphical in Figures 1–2 and digitised values must not be
+presented as tabulated measurements.
