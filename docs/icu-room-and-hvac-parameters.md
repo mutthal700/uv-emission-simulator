@@ -48,14 +48,52 @@ Volumetric flow for any air change rate, by definition of ACH:
 
 No ACH value is asserted here; see section 3.
 
-### 1.1 Occupant count for source-term modelling
+### 1.1 What the 25.00 m² covers
+
+Established from the source, not assumed:
+
+- The area **excludes** the staff write-up workstation. Page 2: "A write-up
+  workstation with observation windows is currently indicated directly outside
+  the bed room *(area not included calculation for the area of this Standard
+  Component)*."
+- The area **contains no ensuite**. The hydraulic schedule for this room code
+  lists exactly one sanitary fixture — `HYBA-101 BASIN: type A, handwashing`
+  with `HYTP-067` tapware (page 4). There is no WC, shower or bedpan fixture.
+  The remaining hydraulic items are dialysis-related (`HYGE-082` wall box,
+  `HYDR-104` tundish, `HYDR-157` cooling pit) plus drainage connections. The
+  patient-lifter note on page 2 offers "full transfer to ensuite" as an optional
+  track extent, indicating an ensuite adjacent to the Standard Component rather
+  than inside it.
+
+So `25.00 m²` is the patient bed room alone, and `V = 75.0 m³` is the volume of
+the single zone to be modelled.
+
+### 1.2 Occupant count for source-term modelling
 
 The occupancy line supports two counts, both read directly from it:
 
 - steady state: 1 patient + 1-2 visitors + 1-2 staff → 3 to 5 persons
 - with surge staff: + 4-6 additional staff → up to 11 persons
 
-### 1.2 HVAC service types named in the sheet (page 1, verbatim)
+### 1.3 Room envelope (pages 3-4, verbatim codes)
+
+| Element | Source entry | Figure |
+|---|---|---|
+| Main door | `DOST-074.01 DOOR: stacking, 2 leaves + 1 fixed panel, fully glazed` | **1800 mm clear opening** |
+| Second door (optional) | `DOSL-073.02 DOOR: sliding, 1 leaf, fully glazed, with integral blinds` | **900 mm clear opening** |
+| External window | `WIOP-256.02 WINDOW: operable, jockey sash, external, double glazed, with integral blind` | **operable**, sill at 750 mm |
+| Internal windows | `WIFX-058.04 WINDOW: fixed, internal, double glazed, with integral blind` x3 — two to staff write-up (if provided), one to adjacent room | fixed, sill at 1050 mm |
+| Ceiling | `CLFS-011 CEILING: flush set, suspended`; `CLCN-031 CORNICE: square set` | at 3.0 m |
+| Floor | `FLVY-101 FLOOR FINISH: vinyl, seamless`; `FLSK-021 SKIRTING: vinyl, integral, coved` | — |
+| Walls | `WLFI-002` paint, clinical areas; `WLFI-011.03` vinyl to 1200 AFFL | — |
+
+Bearing on the model: the door clear openings give the aperture for any
+door-opening exchange term; the operable external window confirms that the
+`VENTILATION: natural` service listed on page 1 is physically realisable in this
+room; the flush-set suspended ceiling at 3.0 m is the mounting plane for supply
+terminals and for any upper-room fixture.
+
+### 1.4 HVAC service types named in the sheet (page 1, verbatim)
 
 The sheet lists which services the room may have. It gives no quantities.
 
@@ -69,7 +107,13 @@ HVAC   AIRCONDITIONING: general
        VENTILATION: natural
 ```
 
-### 1.3 Equipment relevant to an emission source term (pages 5-7)
+Page 1 also notes the room "may be utilised as a standard pressure (S-Class)
+isolation room", with P-Class and N-Class engineering referred out to *AusHFG
+Part D: Infection Prevention and Control* and *AusHFG Isolation Room –
+Engineering and Design Requirements* (page 2). Isolation modes are out of scope
+per section 0.
+
+### 1.5 Equipment relevant to an emission source term (pages 5-7)
 
 `MMHA-051 DEVICE: ventilator, adult` (1); `MMPM-021 MONITOR: patient, high
 acuity` (1); `MMGE-381 MACHINE: dialysis` (1, optional); `MMSP-212 MEDICAL
@@ -84,15 +128,17 @@ Checked, not assumed. All 7 pages were text-extracted and all 22 embedded
 images were extracted and inspected — the images are section icons repeated on
 every page, and the file contains no floor plan.
 
-Not stated anywhere in the document: length or width; air changes per hour;
-outdoor air rate or fraction; filter class (HEPA is named as a service, with no
-H-class, MERV or ISO 16890 grade, and no pre-filter); pressure differential in
-Pa; design temperature; design relative humidity; supply or return terminal
-type or position.
+Not stated anywhere in the document:
 
-The sheet defers pressure-class engineering to *AusHFG Part D: Infection
-Prevention and Control* and *AusHFG Isolation Room – Engineering and Design
-Requirements* (page 2).
+- overall length or width — door and window openings are dimensioned, the room
+  outline is not
+- air changes per hour
+- outdoor air rate or outdoor air fraction
+- filter class — HEPA is named as a service, with no H-class, no MERV, no
+  ISO 16890 grade, and no pre-filter stage
+- pressure differential in Pa
+- design temperature and design relative humidity
+- supply or return terminal type, size or position
 
 ---
 
