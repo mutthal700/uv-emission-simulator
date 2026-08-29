@@ -262,9 +262,36 @@ section is fixed by the ACH scenario.
 | A3 | **T and RH guideline bands are room targets; the supply state is additionally bounded.** Supply state is derived from the room sensible and latent balance, subject to a separately stated supply constraint. The supply bound is not a guideline value and must be sourced or declared as a design choice. |
 | A4 | **Temporal variation is outdoor climate plus an occupancy profile.** Five Indian climate zones supply outdoor `T`, `RH`, `PM2.5`, `PM10`. The occupancy profile is not yet sourced; see §10. |
 
-A2 has a consequence for A1: with plug flow in the duct there is a transport
-delay between the duct outlet and the room inlet equal to the outlet-section
-transit time. Whether that delay is retained or neglected is not yet decided.
+| A5 | **Exhaust is taken off the return immediately before the duct inlet, and is exactly balanced against outdoor air.** `Q_exhaust = Q_OA`, so `Q_recirc = Q_s − Q_OA`. With no infiltration, room outflow equals `Q_s` and the room's outdoor-air exchange equals `Q_OA`. |
+| A6 | **Return concentration equals room concentration** (perfect mixing at the return). |
+| A7 | **CO₂ is controlled by outdoor-air fraction alone** — no filter or UV credit. TVOC is in scope and, absent a gas-phase stage, is governed by the same dilution-only mechanism. |
+| A8 | **Guideline runs carry no OA pre-filter** until ASHRAE 170-2025 §6.4 topology is in evidence. The pre-filter is reserved for the independent optimisation. |
+| A9 | **Victoria's remote HEPA is the main filter bank**, not an OA-branch pre-filter. |
+
+Stream balance under A5, at `V = 75.0 m³`:
+
+| ACH | `f_OA` | `Q_s` (m³/h) | `Q_OA` = `Q_exhaust` | `Q_recirc` |
+|---|---|---|---|---|
+| 6 | 0.333 | 450.0 | 150.0 | 300.0 |
+| 6 | 0.50 | 450.0 | 225.0 | 225.0 |
+| 6 | 1.00 | 450.0 | 450.0 | 0.0 |
+| 10 | 0.20 | 750.0 | 150.0 | 600.0 |
+| 10 | 0.50 | 750.0 | 375.0 | 375.0 |
+
+### 9.3 Transport delay
+
+Plug flow in the duct implies a delay between duct outlet and room inlet. Its
+magnitude against the 15-minute scheduler:
+
+| ACH | 6 m transit | as fraction of a 15-min step |
+|---|---|---|
+| 6 | 4.46 s | 0.50 % |
+| 10 | 2.68 s | 0.30 % |
+
+The delay is retained in the model structure because it is physically real and
+costs nothing to carry, but it is **unresolvable at 15-minute resolution** and
+will not change any annual result. It becomes significant only in a
+rig-matched transient validation at sub-minute resolution.
 
 ---
 
