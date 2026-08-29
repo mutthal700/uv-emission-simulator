@@ -2,6 +2,11 @@
 
 Status: **geometry closed; ventilation parameters open, awaiting pasted sources.**
 
+
+> **This file is the verification audit trail.** The model-facing inputs it
+> supports are consolidated in `ICU_MODEL_INPUTS.md`, which carries confirmed
+> data only. Where the two differ, the model-input file governs.
+
 Rule for this file: an entry is written only after the figure has been read
 first-hand from a primary document. Nothing is inferred, interpolated, or
 recalled. Unsourced parameters stay marked `pending` rather than being filled
