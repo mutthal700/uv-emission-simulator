@@ -111,6 +111,48 @@ G7 records that the AusHFG room data sheet imposes **no** filter, pressure or
 ventilation-rate requirement: only `AIRCONDITIONING: general` is ticked. Its
 value to the model is the geometry in §1, not a service requirement.
 
+### 4.1 Constrained versus free control parameters
+
+Derived directly from the G-rows above. This is the feasible space each
+guideline leaves to the optimiser: a bound is a constraint, `free` means the
+guideline's verified ICU row states nothing and therefore gives no credit and
+imposes no limit.
+
+| # | `ACH_total` | `f_OA` | Filter | Pressure | T | RH | Temporal |
+|---|---|---|---|---|---|---|---|
+| G1 | ≥ 6 | ≥ 2/`ACH_total` | ≥ MERV-14 | **free** (N/R) | 21–24 °C | 30–60 % | turndown permitted when unoccupied; room-unit recirculation prohibited |
+| G2 | ≥ 10 | **free** | EPA10 | +5 Pa | 20–25 °C | ≤ 60 % (no lower bound) | — |
+| G3 | 10 (stated) | **free** | SUP1 | +10 Pa | **free** | **free** | — |
+| G4 | 10 (stated) | **free** | F7 | +10 Pa | 18–25 °C | **free** | archived |
+| G5 | 6 (stated) | 2 ACH | 99 % @ 5 µm | **free** (no numerical value) | 16–25 °C | **free** | — |
+| G6 | **free** (not in clause) | **= 0.50 (equality)** | remote HEPA | positive | **free** | **free** | — |
+| G7 | **free** | **free** | **free** (none selected) | **free** (none selected) | **free** | **free** | — |
+| G8 | absent | absent | absent | absent | absent | absent | — |
+
+Three consequences for the optimisation:
+
+1. **The minimum-energy compliant point of each guideline sits at the lower
+   bound of its constrained ranges.** Fan power rises steeply with flow and
+   outdoor-air conditioning duty rises with `Q_OA`, so for Stage A the
+   as-written performance of a guideline is evaluated at its floors, not at a
+   mid-range choice.
+
+2. **G6 is the only equality constraint on `f_OA`.** Every other source either
+   sets a floor (G1, G5) or is silent. An equality removes `f_OA` from the
+   optimiser entirely for that scenario.
+
+3. **G2, G3 and G4 place no lower bound on outdoor air in their verified
+   critical-care rows.** A literal-compliance optimiser minimising energy inside
+   those rows alone would drive `f_OA` toward zero while still meeting the stated
+   10 ac/h, filter and pressure requirements. This is a property of the rows as
+   verified, and it is exactly the kind of gap Stage A exists to expose.
+
+   **Caveat, and it matters:** only the critical-care rows of HTM 03-01:2021 and
+   SHTM 03-01:2014 are in evidence. Neither full document has been inspected
+   here. A general minimum-fresh-air provision elsewhere in those documents would
+   change this conclusion. The finding must be stated as scoped to the verified
+   rows until the surrounding clauses are checked.
+
 ---
 
 ## 5. Room temperature and relative humidity
