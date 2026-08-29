@@ -225,3 +225,53 @@ Verification of source 1 was performed in this session by direct inspection of
 the PDF, including rendering page 1 to resolve checkbox state. Sources 2–8 are
 recorded from *ICU guideline archive verification*, 2026-08-29, held at
 `docs/sources/`.
+
+---
+
+## 9. Duct geometry and model architecture
+
+### 9.1 Duct (design input, fixed by the researcher)
+
+| Quantity | Value |
+|---|---|
+| Cross-section | 0.3048 m × 0.3048 m (square) |
+| Face area `A_d` | 0.092903 m² (exactly 1.000 ft²) |
+| Rig length | 6 m (master §4, physical rig) |
+| Sections | inlet/mixing → filter → coils → UVGI → outlet |
+
+Derived duct velocity and transit time at the guideline flows, `v = Q_s / A_d`:
+
+| ACH | `Q_s` (m³/s) | `v` (m/s) | `v` (fpm) | transit over 6 m | transit per 1 m |
+|---|---|---|---|---|---|
+| 6 | 0.125000 | 1.345 | 265 | 4.46 s | 0.74 s |
+| 10 | 0.208333 | 2.242 | 441 | 2.68 s | 0.45 s |
+
+These velocities are low for a supply duct. Two consequences: if the filter spans
+the full duct face, its face velocity is 0.53 and 0.88 of a 2.54 m/s (500 fpm)
+reference rating at 6 and 10 ACH respectively, which raises capture efficiency
+and lowers clean pressure drop relative to rated conditions; and UV residence
+time is set by these transit times, so the dose available per metre of lamp
+section is fixed by the ACH scenario.
+
+### 9.2 Architecture decisions
+
+| # | Decision |
+|---|---|
+| A1 | **Room is solved as a state variable and the loop is closed.** The room mass balance of master §12 runs; the recirculated-air concentration at the duct inlet is the room concentration at time `t`; the duct outlet is the room supply. |
+| A2 | **Duct sections are plug flow with residence time.** UV dose is irradiance × residence time, consistent with the ray-tracing dose profile. The room remains well-mixed; the duct does not. |
+| A3 | **T and RH guideline bands are room targets; the supply state is additionally bounded.** Supply state is derived from the room sensible and latent balance, subject to a separately stated supply constraint. The supply bound is not a guideline value and must be sourced or declared as a design choice. |
+| A4 | **Temporal variation is outdoor climate plus an occupancy profile.** Five Indian climate zones supply outdoor `T`, `RH`, `PM2.5`, `PM10`. The occupancy profile is not yet sourced; see §10. |
+
+A2 has a consequence for A1: with plug flow in the duct there is a transport
+delay between the duct outlet and the room inlet equal to the outlet-section
+transit time. Whether that delay is retained or neglected is not yet decided.
+
+---
+
+## 10. Open: the diurnal occupancy profile
+
+`S_i(t)` requires a time-varying occupancy, and no ICU study in evidence reports
+an activity schedule or activity-resolved emission factors. Recommended route,
+not yet executed, is source reconstruction rather than forward emission
+factors — see the discussion accompanying this revision. Nothing is assumed here
+until that method is agreed and its inputs are sourced.
