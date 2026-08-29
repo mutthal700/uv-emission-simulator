@@ -1,14 +1,26 @@
 # ICU Room and HVAC Parameters — Verified Source Register
 
-Status: **incomplete — awaiting primary sources.**
+Status: **geometry closed; ventilation parameters open, awaiting pasted sources.**
 
-This file records only what has been read first-hand from a primary document.
-Nothing here is inferred, interpolated, or recalled. Items that cannot yet be
-sourced are listed in section 3 as open, not filled with a placeholder.
+Rule for this file: an entry is written only after the figure has been read
+first-hand from a primary document. Nothing is inferred, interpolated, or
+recalled. Unsourced parameters stay marked `pending` rather than being filled
+with a plausible value.
 
 ---
 
-## 1. Verified: AusHFG Room Data Sheet 1BR-ICU
+## 0. Agreed scope
+
+| Decision | Setting |
+|---|---|
+| Geometry | Area x ceiling height only. No length/width; room treated as a single well-mixed zone. |
+| Jurisdictions | All — the work is a cross-country comparison, so every standard gets its own row and is reported separately, not merged into a single "typical" value. |
+| Operating mode | Normal ICU operation only. Airborne-infection-isolation / negative-pressure cases are out of scope. |
+| Source route | Tables pasted as text by the researcher; each entry recorded with document, edition and table/row. |
+
+---
+
+## 1. Verified: room geometry and occupancy
 
 Source, read in full in this session:
 
@@ -17,25 +29,35 @@ Source, read in full in this session:
 > Room Code 1BR-ICU*. Issue date 12.11.2025, Revision 2, 7 pages.
 > Copyright (c) 2025 AHIA.
 
-### 1.1 Geometry and occupancy (page 1, verbatim)
+| Quantity | Value | Location in source |
+|---|---|---|
+| Briefed area, `A` | `25.00 m²` | page 1, "Briefed Area" |
+| Ceiling height, `H` | `3.0 m` | page 1, "Ceiling Height" |
+| Occupancy | `1 patient; 1-2 visitors; 1-2 staff (with 4-6 additional staff as required)` | page 1, "Occupancy" |
+| Hours of operation | `24 hours` | page 1 |
+| Beds | 1 | page 5, `MMBE-116 BED: patient, electric, with mattress, intensive care`, QTY 1 |
 
-| Field | Value as printed |
-|---|---|
-| Briefed Area | `25.00 m²` |
-| Ceiling Height | `3.0 m` |
-| Occupancy | `1 patient; 1-2 visitors; 1-2 staff (with 4-6 additional staff as required)` |
-| Hours of Operation | `24 hours` |
+Room volume, by arithmetic on the two verified figures above:
 
-Bed count is 1, established from the FF&E schedule (page 5):
-`MMBE-116  BED: patient, electric, with mattress, intensive care  QTY 1`.
+    V = A x H = 25.00 m² x 3.0 m = 75.0 m³
 
-The sheet describes the room as "an acuity adaptable, enclosed room for a
-patient requiring intensive medical treatment, nursing care and monitoring for
-potentially life threatening conditions" (page 1).
+Volumetric flow for any air change rate, by definition of ACH:
 
-### 1.2 HVAC services listed (page 1, verbatim)
+    Q [m³/h] = ACH [1/h] x 75.0 m³
+    Q [L/s]  = ACH [1/h] x 75.0 / 3.6
 
-The sheet lists service *types* available to the room. It gives no quantities.
+No ACH value is asserted here; see section 3.
+
+### 1.1 Occupant count for source-term modelling
+
+The occupancy line supports two counts, both read directly from it:
+
+- steady state: 1 patient + 1-2 visitors + 1-2 staff → 3 to 5 persons
+- with surge staff: + 4-6 additional staff → up to 11 persons
+
+### 1.2 HVAC service types named in the sheet (page 1, verbatim)
+
+The sheet lists which services the room may have. It gives no quantities.
 
 ```
 HVAC   AIRCONDITIONING: general
@@ -47,83 +69,103 @@ HVAC   AIRCONDITIONING: general
        VENTILATION: natural
 ```
 
-### 1.3 Pressure regime (pages 1-2, verbatim)
+### 1.3 Equipment relevant to an emission source term (pages 5-7)
 
-> "This room may be utilised as a standard pressure (S-Class) isolation room."
-> (page 1)
-
-> "For additional information on standard pressure (S-Class) isolation rooms, as
-> well considerations and requirements for positive pressure (P-Class) and
-> negative pressure (N-Class) rooms refer to 'AusHFG Part D: Infection
-> Prevention and Control' and 'AusHFG Isolation Room- Engineering and Design
-> Requirements'." (page 2)
-
-So the ICU room's pressure class and its engineering values are **defined in two
-other AusHFG documents**, not in this sheet.
-
-### 1.4 The one dimensional constraint stated in the sheet (page 2)
-
-> "The handwashing basin is to be located at least 1.2m from the patient bed."
-
-### 1.5 Equipment relevant to a source/emission model (pages 5-7)
-
-`MMHA-051 DEVICE: ventilator, adult` (1), `MMPM-021 MONITOR: patient, high
-acuity` (1), `MMGE-381 MACHINE: dialysis` (1, optional), `MMSP-212 MEDICAL
-SERVICES PENDANT: double arm` (1), oxygen / medical air / suction outlets x2 per
-pendant arm.
+`MMHA-051 DEVICE: ventilator, adult` (1); `MMPM-021 MONITOR: patient, high
+acuity` (1); `MMGE-381 MACHINE: dialysis` (1, optional); `MMSP-212 MEDICAL
+SERVICES PENDANT: double arm` (1); oxygen, medical air and suction outlets,
+2 each per pendant arm.
 
 ---
 
-## 2. Not present in this document
+## 2. Confirmed absent from the AusHFG sheet
 
-Checked and confirmed absent — do not assume these from the sheet:
+Checked, not assumed. All 7 pages were text-extracted and all 22 embedded
+images were extracted and inspected — the images are section icons repeated on
+every page, and the file contains no floor plan.
 
-- **Length and width.** The sheet gives area and ceiling height only. All 7
-  pages were text-extracted and all 22 embedded images were extracted and
-  inspected; the images are section icons repeated on every page. There is no
-  floor plan and no L x B dimension anywhere in the file. The header line
-  "View related documents on the AusHFG website" indicates the dimensioned
-  Standard Component drawing is a separate document.
-- **Air changes per hour.** Not stated.
-- **Outdoor / fresh air rate or fraction.** Not stated.
-- **Filter grade.** "HEPA filtered" is named as an available service; no class
-  (H13/H14), no MERV, no ISO 16890 grade, and no pre-filter is specified.
-- **Pressure differential in Pa.** Not stated.
-- **Design temperature or relative humidity.** Not stated.
-- **Supply/return terminal type or position.** Not stated.
+Not stated anywhere in the document: length or width; air changes per hour;
+outdoor air rate or fraction; filter class (HEPA is named as a service, with no
+H-class, MERV or ISO 16890 grade, and no pre-filter); pressure differential in
+Pa; design temperature; design relative humidity; supply or return terminal
+type or position.
+
+The sheet defers pressure-class engineering to *AusHFG Part D: Infection
+Prevention and Control* and *AusHFG Isolation Room – Engineering and Design
+Requirements* (page 2).
 
 ---
 
-## 3. Open items and the exact source needed for each
+## 3. Comparison table — to be filled from pasted sources
 
-| # | Parameter | Document required | Where in it |
-|---|---|---|---|
-| 1 | Room length x width | AusHFG Standard Component drawing for 1BR-ICU | dimensioned floor plan |
-| 2 | ACH, outdoor air, filter grade, pressure (AU) | AS 1668.2 and/or AusHFG Part E — Engineering Services | healthcare ventilation rate table |
-| 3 | Isolation-mode engineering values (AU) | AusHFG *Isolation Room – Engineering and Design Requirements*; AusHFG Part D | S/P/N-class tables |
-| 4 | ACH, outdoor ACH, pressure, T, RH (US) | ANSI/ASHRAE/ASHE 170 — state the edition | Table 7.1, row "Critical and intensive care" |
-| 5 | Filter bank efficiencies (US) | ANSI/ASHRAE/ASHE 170 — same edition | Table 6-4 (2008-2017) or the space table (2021+) |
-| 6 | Clear floor area, headwall, clearances (US) | FGI *Guidelines for Design and Construction of Hospitals* — state the edition | critical care unit section |
-| 7 | Bed space area, ceiling height (UK) | HBN 04-02 *Critical care units* | bed space / space requirements |
-| 8 | ACH and pressure regime (UK) | HTM 03-01 Part A, or SHTM 03-01 | Appendix 1 air change rate table |
-| 9 | ACH, fresh air, filtration (India) | ISCCM ICU planning guidelines; NABH standard | HVAC section |
-| 10 | Room class and air volumes (DE) | DIN 1946-4:2018-09 | room class table |
+One row per jurisdiction, reported separately. Every cell is `pending` until
+the source text is supplied.
+
+| Jurisdiction | Document + edition | Total ACH | Outdoor air | Pressure | Filtration | Design T | Design RH | Room area | Ceiling ht |
+|---|---|---|---|---|---|---|---|---|---|
+| Australia / NZ | pending | pending | pending | pending | pending | pending | pending | **25.00 m²** (verified) | **3.0 m** (verified) |
+| United States | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| United Kingdom | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| India | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| Germany | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| Canada | pending | pending | pending | pending | pending | pending | pending | pending | pending |
 
 ---
 
-## 4. Session limitation affecting verification
+## 4. What to paste, per jurisdiction
 
-Primary-document retrieval is not possible from this environment. Every outbound
-host tested returned an HTTP 403 policy denial at the egress gateway
-(`connect_rejected`, "gateway answered 403 to CONNECT"), including
-`www.ashrae.org`, `www.england.nhs.uk`, `www.cdc.gov`, `fgiguidelines.org`,
+For each paste, include the **document title, edition/year, and table or
+section number**. Edition matters: the same standard has changed these values
+between revisions, and a comparison study has to name which revision it used.
+
+**Australia / NZ**
+- AusHFG Part E – Engineering Services, or AS 1668.2 (state the year, 2012 or
+  2024): the ventilation rate entry covering intensive care.
+
+**United States**
+- ANSI/ASHRAE/ASHE Standard 170 (state the edition — 2008, 2013, 2017 or 2021):
+  the design-parameters table row for critical / intensive care, with all its
+  columns: pressure relationship to adjacent areas, minimum outdoor ACH,
+  minimum total ACH, whether all room air is exhausted directly outdoors,
+  whether air is recirculated by room units, design RH, design temperature.
+- The same standard's filtration requirement for that space — in the 2008-2017
+  editions this is a separate filter-efficiency table (filter bank 1 and filter
+  bank 2); in the 2021 edition filtration was moved into the space tables, so
+  paste whichever your copy has.
+- FGI *Guidelines for Design and Construction of Hospitals* (state the edition):
+  the critical care patient room area requirement.
+
+**United Kingdom**
+- HBN 04-02 *Critical care units*: the bed space area and ceiling height text.
+- HTM 03-01 Part A, or SHTM 03-01: the appendix table row for critical care —
+  air change rate and pressure regime.
+
+**India**
+- ISCCM ICU planning and design guidelines: the HVAC section.
+- NABH standard, and NBC 2016 Part 8 if you have it: the ICU ventilation clause.
+
+**Germany**
+- DIN 1946-4:2018-09: the room-class table, and which class intensive care
+  falls into, with its air volume and filter stages.
+
+**Canada** (optional, if you have access)
+- CSA Z317.2 *HVAC systems in health care facilities*: the ICU row.
+- CSA Z8000 *Canadian health care facilities*: the critical care room area.
+
+Paste in any order and in any size chunks — each one gets recorded against its
+row in section 3 as it arrives.
+
+---
+
+## 5. Session limitation
+
+Primary-document retrieval is not possible from this environment. Every
+outbound host tested returned an HTTP 403 policy denial at the egress gateway
+(`connect_rejected`, "gateway answered 403 to CONNECT"): `www.ashrae.org`,
+`www.england.nhs.uk`, `www.cdc.gov`, `fgiguidelines.org`,
 `ccforum.biomedcentral.com`, `doi.org`, `www.who.int`,
 `store.standards.org.au`, `healthfacilityguidelines.com.au`,
-`www.nss.nhs.scot` and `en.wikipedia.org`.
+`www.nss.nhs.scot`, `en.wikipedia.org`.
 
-Web *search* still returns result titles and machine-written summaries, but a
-summary of a page is not the page. Nothing sourced that way has been entered in
-section 1, and nothing should be.
-
-To close section 3, the source documents need to be supplied directly — uploaded
-as files to the session, or the relevant table pasted as text.
+Web search still returns titles and machine-written summaries, but a summary of
+a page is not the page, and nothing obtained that way is recorded in this file.
