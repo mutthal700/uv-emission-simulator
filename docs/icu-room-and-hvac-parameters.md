@@ -142,76 +142,133 @@ Not stated anywhere in the document:
 
 ---
 
-## 3. Comparison table — to be filled from pasted sources
+## 3. Provenance tiers
 
-One row per jurisdiction, reported separately. Every cell is `pending` until
-the source text is supplied.
+Values in this file carry one of three tags. The distinction matters because
+section 0 committed to primary text only, and not every entry below meets that
+bar in the same way.
 
-| Jurisdiction | Document + edition | Total ACH | Outdoor air | Pressure | Filtration | Design T | Design RH | Room area | Ceiling ht |
-|---|---|---|---|---|---|---|---|---|---|
-| Australia / NZ | pending | pending | pending | pending | pending | pending | pending | **25.00 m²** (verified) | **3.0 m** (verified) |
-| United States | pending | pending | pending | pending | pending | pending | pending | pending | pending |
-| United Kingdom | pending | pending | pending | pending | pending | pending | pending | pending | pending |
-| India | pending | pending | pending | pending | pending | pending | pending | pending | pending |
-| Germany | pending | pending | pending | pending | pending | pending | pending | pending | pending |
-| Canada | pending | pending | pending | pending | pending | pending | pending | pending | pending |
-
----
-
-## 4. What to paste, per jurisdiction
-
-For each paste, include the **document title, edition/year, and table or
-section number**. Edition matters: the same standard has changed these values
-between revisions, and a comparison study has to name which revision it used.
-
-**Australia / NZ**
-- AusHFG Part E – Engineering Services, or AS 1668.2 (state the year, 2012 or
-  2024): the ventilation rate entry covering intensive care.
-
-**United States**
-- ANSI/ASHRAE/ASHE Standard 170 (state the edition — 2008, 2013, 2017 or 2021):
-  the design-parameters table row for critical / intensive care, with all its
-  columns: pressure relationship to adjacent areas, minimum outdoor ACH,
-  minimum total ACH, whether all room air is exhausted directly outdoors,
-  whether air is recirculated by room units, design RH, design temperature.
-- The same standard's filtration requirement for that space — in the 2008-2017
-  editions this is a separate filter-efficiency table (filter bank 1 and filter
-  bank 2); in the 2021 edition filtration was moved into the space tables, so
-  paste whichever your copy has.
-- FGI *Guidelines for Design and Construction of Hospitals* (state the edition):
-  the critical care patient room area requirement.
-
-**United Kingdom**
-- HBN 04-02 *Critical care units*: the bed space area and ceiling height text.
-- HTM 03-01 Part A, or SHTM 03-01: the appendix table row for critical care —
-  air change rate and pressure regime.
-
-**India**
-- ISCCM ICU planning and design guidelines: the HVAC section.
-- NABH standard, and NBC 2016 Part 8 if you have it: the ICU ventilation clause.
-
-**Germany**
-- DIN 1946-4:2018-09: the room-class table, and which class intensive care
-  falls into, with its air volume and filter stages.
-
-**Canada** (optional, if you have access)
-- CSA Z317.2 *HVAC systems in health care facilities*: the ICU row.
-- CSA Z8000 *Canadian health care facilities*: the critical care room area.
-
-Paste in any order and in any size chunks — each one gets recorded against its
-row in section 3 as it arrives.
+- **[READ]** — read first-hand from the primary document in this session.
+- **[ATTESTED]** — recorded from *ICU guideline archive verification*,
+  2026-08-29, which reports having inspected the primary document and gives a
+  full locator. The underlying PDF has not been opened here. This is a report
+  *about* a document, not the document.
+- **[ATTESTED-EXT]** — as above, but the verification report itself states the
+  evidence was supplied separately as images rather than from the archive.
 
 ---
 
-## 5. Session limitation
+## 4. Comparison table
+
+| Jurisdiction | Document, edition | Locator | Total ACH | Outdoor air | Pressure | Filtration | T | RH | Room area | Ceiling | Tier |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| AU/NZ (room) | AusHFG RDS 1BR-ICU, Rev 2, 12.11.2025 | page 1 | — | — | S/P/N-class selectable, no Pa | "HEPA filtered" named, no class | — | — | **25.00 m²** | **3.0 m** | [READ] |
+| AU/NZ (vent) | AusHFG Part E; AS 1668.2 | pending | pending | pending | pending | pending | pending | pending | — | — | — |
+| AU – Victoria | *Engineering guidelines for healthcare facilities, Vol 4 – HVAC*, HTG-2020-004, VHHSBA, May 2020 | §4.172 "ICU and CCU", p34 | not in this clause | **50 % outside air to patient areas** | positive, beds → circulation | remote HEPA outside the ICU | — | — | — | — | [ATTESTED] |
+| US | ANSI/ASHRAE/ASHE 170-**2025** | Table 7-1, "Critical care patient care station (FGI 2.2-2.6.2)" | **6 min** | **2 ACH min** | **N/R** | **MERV-14 min** | 70–75 °F / 21–24 °C | 30–60 % | see FGI | — | [ATTESTED-EXT] |
+| US (area) | FGI *Hospitals*, 2022 | ICU room-area clause | — | — | — | — | — | — | pending | pending | — |
+| UK | HTM 03-01 Part A, **2021** | Table 3, "Level 2 or 3 critical care individual room", p64 print / p80 PDF | **≥10 ac/h** | supply only; cascade out | **+5 Pa** to general area | **BS EN 1822 EPA10** final | 20–25 °C, BMS | floating, max 60 % | — | — | [ATTESTED] |
+| UK | HTM 03-01 Part A, **2021** | Appendix 2, "Critical care areas (Level 2 and 3 care)", p147 print / p163 PDF | **10 ac/h** | supply | **+10 Pa** | **BS EN 16798 SUP1** supply | not in this row | — | — | — | [ATTESTED] |
+| UK (area) | HBN 04-02, **2013** | §4.14 and §4.17, p9 print / p18 PDF | — | — | — | — | — | — | **25.5 m² min bed space** | **3 m recommended** | [ATTESTED] |
+| UK (historical) | SHTM 03-01 Part A, v2 Feb 2014, **archived** | Appendix 1, Table A1, "Critical Care Areas", p139 | 10 ac/h | supply | +10 Pa | **F7** supply | 18–25 °C | — | — | — | [ATTESTED] |
+| India | ISCCM Consensus Statement on ICU Planning and Designing, **2020** | "Environmental Requirements" → HVAC system of ICU | **6** | **2 ACH** | no numerical differential given for general ICU | **99 % efficiency down to 5 µm** | 16–25 °C (enclosed patient modules) | not stated | — | — | [ATTESTED] |
+| India | NABH *Accreditation Standards for Hospitals*, 6th ed., Jan 2025 | COP.9 | **ABSENT** | ABSENT | ABSENT | ABSENT | ABSENT | ABSENT | — | — | [ATTESTED] |
+| India | NBC 2016 Part 8 §3 | Tables 4, 6, 7 | pending | pending | pending | pending | pending | pending | — | — | — |
+| Germany | DIN 1946-4:2018-09 + /A1:2025-11 | Table 1, room classification | pending | pending | pending | pending | pending | pending | — | — | — |
+| Canada | CSA Z317.2; CSA Z8000 | edition to be named | pending | pending | pending | pending | pending | pending | pending | — | — |
+
+NABH is marked **ABSENT** rather than pending: full-document screening found no
+numerical ICU HVAC values. For a comparison study that is a finding, not a gap.
+
+---
+
+## 5. Flow rates implied for this room
+
+Arithmetic on the verified volume `V = 75.0 m³`. No rate is asserted; each is
+the consequence of a sourced ACH.
+
+| Basis | ACH | Q (m³/h) | Q (L/s) |
+|---|---|---|---|
+| ASHRAE 170-2025 / ISCCM 2020, total | 6 | 450 | 125.0 |
+| ASHRAE 170-2025 / ISCCM 2020, outdoor | 2 | 150 | 41.7 |
+| HTM 03-01 2021 / SHTM 2014, total | 10 | 750 | 208.3 |
+| Victoria HTG-2020-004, outdoor at 6 ACH total | 3.0 | 225 | 62.5 |
+| Victoria HTG-2020-004, outdoor at 10 ac/h total | 5.0 | 375 | 104.2 |
+
+**The UK total is 1.67x the US/India total.** At this volume that is 300 m³/h of
+additional supply, and it propagates directly into the HVAC removal term.
+
+Outdoor air per person at the ASHRAE/ISCCM minimum of 2 ACH (150 m³/h), against
+the occupancy verified in §1.2:
+
+| Occupancy | Persons | m³/h per person | L/s per person |
+|---|---|---|---|
+| Minimum steady | 3 | 50.0 | 13.9 |
+| Maximum steady | 5 | 30.0 | 8.3 |
+| With surge staff | 11 | 13.6 | 3.8 |
+
+The 2 ACH floor is volume-based, not occupancy-based, so per-person outdoor air
+falls to roughly a quarter of its steady-state value during a surge.
+
+---
+
+## 6. Observations bearing on the model
+
+**6.1 Two jurisdictions converge on room size.** AusHFG 25.00 m² [READ] and
+HBN 04-02 25.5 m² [ATTESTED] agree within 2 %, from independent guideline
+families. `V = 75.0 m³` is well supported. FGI remains the outlier candidate and
+is still pending.
+
+**6.2 Filtration is specified in four incommensurable systems.** MERV-14
+(ASHRAE 52.2), EPA10 (BS EN 1822), SUP1 (BS EN 16798), and "99 % down to 5 µm"
+(ISCCM), plus historical F7 (EN 779). These cannot be placed in a single column
+without stating a conversion basis, and at least one pair is not convertible at
+all: EN 1822 EPA10 is a *filter efficiency* class, while EN 16798 SUP1 is a
+*supply air quality* category — different quantities, not different units for
+the same quantity. Any cross-country filtration comparison has to address this
+explicitly rather than tabulating them side by side.
+
+**6.3 HTM 03-01 2021 is internally inconsistent in two places, not one.** The
+verification report flags the pressure disagreement (+5 Pa in Table 3 vs +10 Pa
+in Appendix 2) and is right that these must not be collapsed. The same two
+locations also disagree on filtration — EN 1822 EPA10 in Table 3, EN 16798 SUP1
+in Appendix 2 — which is the more awkward of the two, per §6.2.
+
+**6.4 The ISCCM filtration spec is coarse relative to the aerosols of
+interest.** "99 % efficiency down to 5 µm" sets no requirement below 5 µm.
+Respirable infectious aerosol is largely sub-5 µm, so this clause constrains the
+recirculation removal term far less than MERV-14 or EPA10 do. Worth stating
+plainly if the comparison reports a single "filtration" row.
+
+**6.5 ASHRAE 170-2025 permits unoccupied turndown.** Table 7-1 records
+"Unoccupied turndown: Yes" for this space. The code-permitted ventilation rate
+is therefore not constant in time, which matters for any transient simulation
+and for how a UV term is credited against it.
+
+**6.6 UK filtration tightened between editions.** SHTM 03-01 v2 (2014) specifies
+F7; HTM 03-01 (2021) specifies EPA10. A directional change over time that a
+comparative paper can report.
+
+---
+
+## 7. Still required
+
+| Document | Edition | Locator needed |
+|---|---|---|
+| AusHFG Part E – Building Services and Environmental Design | edition to be identified | intensive-care ventilation entry |
+| AS 1668.2 | 2012 or 2024 | intensive-care ventilation entry |
+| FGI *Guidelines for Design and Construction of Hospitals* | 2022 | adult ICU patient-room area clause |
+| ANSI/ASHRAE/ASHE 170-2025 | 2025 + 2026 errata | §6.4 filter-bank topology |
+| NBC India 2016 Part 8, Section 3 | 2016 | ICU rows in Tables 4, 6, 7 |
+| DIN 1946-4 | 2018-09 + /A1:2025-11 | Table 1, intensive-care classification |
+| CSA Z317.2; CSA Z8000 | to be named | ICU row; critical-care room area |
+
+---
+
+## 8. Session limitation
 
 Primary-document retrieval is not possible from this environment. Every
-outbound host tested returned an HTTP 403 policy denial at the egress gateway
-(`connect_rejected`, "gateway answered 403 to CONNECT"): `www.ashrae.org`,
-`www.england.nhs.uk`, `www.cdc.gov`, `fgiguidelines.org`,
-`ccforum.biomedcentral.com`, `doi.org`, `www.who.int`,
-`store.standards.org.au`, `healthfacilityguidelines.com.au`,
-`www.nss.nhs.scot`, `en.wikipedia.org`.
-
-Web search still returns titles and machine-written summaries, but a summary of
-a page is not the page, and nothing obtained that way is recorded in this file.
+outbound host tested returned an HTTP 403 policy denial at the egress gateway,
+across two rounds covering standards bodies, health departments, publishers and
+preprint servers. Only GitHub hosts are reachable. Sources must therefore be
+supplied directly to the session.
