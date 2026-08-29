@@ -92,30 +92,46 @@ The occupancy line supports two counts, both read directly from it:
 | Walls | `WLFI-002` paint, clinical areas; `WLFI-011.03` vinyl to 1200 AFFL | — |
 
 Bearing on the model: the door clear openings give the aperture for any
-door-opening exchange term; the operable external window confirms that the
-`VENTILATION: natural` service listed on page 1 is physically realisable in this
-room; the flush-set suspended ceiling at 3.0 m is the mounting plane for supply
-terminals and for any upper-room fixture.
+door-opening exchange term, and the flush-set suspended ceiling at 3.0 m is the
+mounting plane for supply terminals and for any upper-room fixture. The external
+window is an operable component of the room, but `VENTILATION: natural` is **not
+a selected service** on this sheet (§1.4) — the window's presence must not be
+read as a natural-ventilation provision.
 
-### 1.4 HVAC service types named in the sheet (page 1, verbatim)
+### 1.4 HVAC services — selection state (page 1)
 
-The sheet lists which services the room may have. It gives no quantities.
+The HVAC block is a **checklist**. Each row carries a checkbox at the right-hand
+edge of the row. Only one HVAC item is ticked:
 
 ```
-HVAC   AIRCONDITIONING: general
-       AIRCONDITIONING: HEPA filtered
-       AIRCONDITIONING: positive pressure
-       AIRCONDITIONING: negative pressure
-       VENTILATION: exhaust
-       VENTILATION: supply
-       VENTILATION: natural
+HVAC   AIRCONDITIONING: general              [x]  SELECTED
+       AIRCONDITIONING: HEPA filtered        [ ]  not selected
+       AIRCONDITIONING: positive pressure    [ ]  not selected
+       AIRCONDITIONING: negative pressure    [ ]  not selected
+       VENTILATION: exhaust                  [ ]  not selected
+       VENTILATION: supply                   [ ]  not selected
+       VENTILATION: natural                  [ ]  not selected
 ```
 
-Page 1 also notes the room "may be utilised as a standard pressure (S-Class)
-isolation room", with P-Class and N-Class engineering referred out to *AusHFG
-Part D: Infection Prevention and Control* and *AusHFG Isolation Room –
-Engineering and Design Requirements* (page 2). Isolation modes are out of scope
-per section 0.
+Consequences, which run the opposite way to a plain reading of the text layer:
+
+- **The sheet is not a HEPA requirement.** The HEPA checkbox is empty.
+- **The sheet requires neither positive nor negative pressure.** Both are empty,
+  which is consistent with the page-1 note that the room "may be utilised as a
+  standard pressure (S-Class) isolation room" — S-Class being neither.
+- **Natural ventilation is not a selected service**, despite the operable
+  external window in the component schedule (§1.3).
+
+Verification method, recorded because the failure mode is easy to repeat: the
+checkboxes are 10.5 pt raster glyphs placed at x ≈ 553 pt, at the far right of
+each row. They carry no text and are invisible to PDF text extraction, which
+returns all seven labels regardless of selection state. They were resolved by
+rendering page 1 at 7x and inspecting the mark column directly.
+
+Selection state of the other page-1 checklists, read the same way: Medical Gas —
+only `special care`; Hydraulic — `WATER: drinking` and `DRAINAGE: sanitary` only;
+Fire — `DETECTION: smoke` only; Shielding — none. The unticked `WATER: specialty`
+is consistent with the dialysis equipment being flagged optional in the schedule.
 
 ### 1.5 Equipment relevant to an emission source term (pages 5-7)
 
@@ -138,8 +154,9 @@ Not stated anywhere in the document:
   outline is not
 - air changes per hour
 - outdoor air rate or outdoor air fraction
-- filter class — HEPA is named as a service, with no H-class, no MERV, no
-  ISO 16890 grade, and no pre-filter stage
+- any filter requirement — the HEPA checkbox is **not selected** (§1.4), and no
+  H-class, MERV, ISO 16890 grade or pre-filter stage appears anywhere
+- any pressure requirement — positive and negative pressure are both unselected
 - pressure differential in Pa
 - design temperature and design relative humidity
 - supply or return terminal type, size or position
@@ -150,7 +167,7 @@ Not stated anywhere in the document:
 
 | Jurisdiction | Document, edition | Locator | Total ACH | Outdoor air | Pressure | Filtration | T | RH | Room area | Ceiling |
 |---|---|---|---|---|---|---|---|---|---|---|
-| AU/NZ (room) | AusHFG RDS 1BR-ICU, Rev 2, 12.11.2025 | page 1 | — | — | S/P/N-class selectable, no Pa | "HEPA filtered" named, no class | — | — | **25.00 m²** | **3.0 m** |
+| AU/NZ (room) | AusHFG RDS 1BR-ICU, Rev 2, 12.11.2025 | page 1 | — | — | **none selected** (positive and negative both unticked); body text notes possible S-Class use | **none** — HEPA checkbox unticked; only `AIRCONDITIONING: general` selected | — | — | **25.00 m²** | **3.0 m** |
 | AU/NZ (vent) | AusHFG Part E; AS 1668.2 | pending | pending | pending | pending | pending | pending | pending | — | — |
 | AU – Victoria | *Engineering guidelines for healthcare facilities, Vol 4 – HVAC*, HTG-2020-004, VHHSBA, May 2020 | §4.172 "ICU and CCU", p34 | not in this clause | **50 % outside air to patient areas** | positive, beds → circulation | remote HEPA outside the ICU | — | — | — | — |
 | US | ANSI/ASHRAE/ASHE 170-**2025** | Table 7-1, "Critical care patient care station (FGI 2.2-2.6.2)" | **6 min** | **2 ACH min** | **N/R** | **MERV-14 min** | 70–75 °F / 21–24 °C | 30–60 % | see FGI | — |
@@ -316,14 +333,16 @@ filter model.
 | HTM 03-01 Part A, 2021 | Appendix 2, critical care areas | **BS EN 16798 SUP1**, supply |
 | SHTM 03-01 Part A v2, 2014 (archived) | Appendix 1, Table A1 | **F7** supply |
 | ISCCM, 2020 | Environmental Requirements → HVAC | **99 % efficiency down to 5 µm** |
-| AusHFG RDS 1BR-ICU, Rev 2 | page 1, HVAC services | **"AIRCONDITIONING: HEPA filtered"** — service named, no class |
+| AusHFG RDS 1BR-ICU, Rev 2 | page 1, HVAC checklist | **none** — HEPA checkbox not selected; only `AIRCONDITIONING: general` is ticked |
 | Victoria HTG-2020-004 | §4.172 | **remote HEPA filtration** in the AHU, sited outside the ICU |
 | NABH 6th ed., Jan 2025 | COP.9 | absent |
 
 Notes carried forward to the filter model:
 
-- The two Australian sources both point to HEPA, while ASHRAE sets MERV-14 and
-  the UK sets EPA10. Whether these are comparable grades cannot be settled from
+- Only **one** Australian source requires HEPA — the Victorian HTG-2020-004
+  remote-AHU provision. The AusHFG room data sheet does not, and must not be
+  cited as a HEPA requirement. ASHRAE sets MERV-14 and the UK sets EPA10.
+  Whether these are comparable grades cannot be settled from
   the guidelines alone — each names a class defined in a different test standard
   (ASHRAE 52.2, BS EN 1822, BS EN 16798, EN 779), and one of them, SUP1, is a
   supply-air-quality category rather than a filter class at all.
