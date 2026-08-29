@@ -16,6 +16,10 @@ with a plausible value.
 | Geometry | Area x ceiling height only. No length/width; room treated as a single well-mixed zone. |
 | Jurisdictions | All — the work is a cross-country comparison, so every standard gets its own row and is reported separately, not merged into a single "typical" value. |
 | Operating mode | Normal ICU operation only. Airborne-infection-isolation / negative-pressure cases are out of scope. |
+| T and RH | Supply-air conditioning setpoints, applied to the outdoor air delivered through the duct to hold ICU comfort. Not yet coupled to decay or UV terms. |
+| Filtration | Collect the filter classes specified for ICU across the guideline set. Conversion to a size-resolved efficiency is deferred to a later filter model. |
+| Outdoor air fraction | Swept as a free parameter; the guideline values mark positions on that axis rather than fixing it. |
+| Pressure and airflow pattern | Recorded in the comparison table only. Excluded from the mass balance, which a single well-mixed zone cannot represent. |
 | Source route | Tables supplied by the researcher. *ICU guideline archive verification*, 2026-08-29 (`docs/sources/`) is treated as authoritative; its findings are recorded here as verified, with its locators carried through. |
 
 ---
@@ -238,7 +242,100 @@ would overstate the evidence.
 
 ---
 
-## 6. Observations bearing on the model
+### 5.4 These are room conditions, not supply conditions
+
+Every band in §5.1 is a **room** design condition — the state the guideline
+requires inside the occupied space. The setpoints applied at the air handler to
+the outdoor air entering the duct are a different quantity: the supply state
+needed to hold the room within its band depends on the room's sensible and
+latent load, the supply flow rate, and the outdoor state being conditioned.
+
+No source in the set states a supply-air temperature or humidity for ICU. So
+21–24 °C and 30–60 % RH are the **targets to be held in the room**, and the duct
+setpoints that achieve them are an output of the conditioning calculation, not a
+figure to be looked up in a guideline.
+
+Two consequences worth carrying forward:
+
+- The supply temperature must sit below the room band to remove sensible heat,
+  by an offset set by the load and the flow rate. It is not 21–24 °C.
+- Because the outdoor air fraction is swept (§6), the conditioning duty on that
+  outdoor stream changes across the sweep, and with it the supply state required
+  to hold the same room condition.
+
+---
+
+## 6. Outdoor air fraction as a swept parameter
+
+FOA is treated as an independent variable. The guideline values are markers on
+that axis, not the axis itself.
+
+    FOA = outdoor air flow / total supply flow
+
+**Why it has to be swept.** Most of the set does not specify a fraction at all.
+ASHRAE 170-2025 and ISCCM 2020 impose an *absolute* outdoor floor of 2 ACH, so
+the fraction they imply is not fixed — it falls as the total rate rises:
+
+| Total ACH | Outdoor floor | Implied minimum FOA |
+|---|---|---|
+| 6 (ASHRAE, ISCCM) | 2 ACH = 150 m³/h | **33.3 %** |
+| 10 (HTM, SHTM) | 2 ACH = 150 m³/h | **20.0 %** |
+
+Only one source in the set states a fraction directly: Victoria HTG-2020-004
+§4.172, **50 % outside air to patient areas**. HTM 03-01 specifies the air
+*path* — supply only, cascading out to lower-classification rooms — but gives no
+outdoor figure, so FOA is undefined for the UK rows.
+
+### 6.1 Sweep grid at V = 75.0 m³
+
+| FOA | Outdoor flow at 6 ACH total | Outdoor flow at 10 ACH total |
+|---|---|---|
+| 20 % | 90.0 m³/h = 1.20 ACH — **below the 2 ACH floor** | 150.0 m³/h = 2.00 ACH |
+| 33.3 % | 150.0 m³/h = 2.00 ACH | 250.0 m³/h = 3.33 ACH |
+| 50 % (Victoria) | 225.0 m³/h = 3.00 ACH | 375.0 m³/h = 5.00 ACH |
+| 75 % | 337.5 m³/h = 4.50 ACH | 562.5 m³/h = 7.50 ACH |
+| 100 % | 450.0 m³/h = 6.00 ACH | 750.0 m³/h = 10.00 ACH |
+
+The compliant region of the sweep depends on the total rate. At 6 ACH total,
+FOA below 33.3 % breaches the ASHRAE/ISCCM outdoor floor; at 10 ACH total the
+same floor is met from 20 % upward. Runs below those points are still worth
+computing — they just have to be reported as non-compliant rather than as design
+options.
+
+---
+
+## 7. Filter classes specified for ICU
+
+Descriptive only. Conversion to a size-resolved efficiency is deferred to the
+filter model.
+
+| Source | Locator | Filter specified |
+|---|---|---|
+| ASHRAE 170-2025 | Table 7-1, critical care patient care station | **MERV-14** minimum |
+| HTM 03-01 Part A, 2021 | Table 3, critical care individual room | **BS EN 1822 EPA10**, final filter |
+| HTM 03-01 Part A, 2021 | Appendix 2, critical care areas | **BS EN 16798 SUP1**, supply |
+| SHTM 03-01 Part A v2, 2014 (archived) | Appendix 1, Table A1 | **F7** supply |
+| ISCCM, 2020 | Environmental Requirements → HVAC | **99 % efficiency down to 5 µm** |
+| AusHFG RDS 1BR-ICU, Rev 2 | page 1, HVAC services | **"AIRCONDITIONING: HEPA filtered"** — service named, no class |
+| Victoria HTG-2020-004 | §4.172 | **remote HEPA filtration** in the AHU, sited outside the ICU |
+| NABH 6th ed., Jan 2025 | COP.9 | absent |
+
+Notes carried forward to the filter model:
+
+- The two Australian sources both point to HEPA, while ASHRAE sets MERV-14 and
+  the UK sets EPA10. Whether these are comparable grades cannot be settled from
+  the guidelines alone — each names a class defined in a different test standard
+  (ASHRAE 52.2, BS EN 1822, BS EN 16798, EN 779), and one of them, SUP1, is a
+  supply-air-quality category rather than a filter class at all.
+- The ISCCM specification sets no requirement below 5 µm.
+- ASHRAE 170-2025 §6.4, which gives the filter-bank topology — how many banks
+  and where MERV-14 sits relative to the recirculation path — is still
+  outstanding, so it is not yet established whether that efficiency applies to
+  the full supply or to the recirculated stream only.
+
+---
+
+## 8. Observations bearing on the model
 
 **6.1 Two jurisdictions converge on room size.** AusHFG 25.00 m²  and
 HBN 04-02 25.5 m²  agree within 2 %, from independent guideline
@@ -277,21 +374,21 @@ comparative paper can report.
 
 ---
 
-## 7. Still required
+## 9. Still required
 
 | Document | Edition | Locator needed |
 |---|---|---|
 | AusHFG Part E – Building Services and Environmental Design | edition to be identified | intensive-care ventilation entry |
 | AS 1668.2 | 2012 or 2024 | intensive-care ventilation entry |
 | FGI *Guidelines for Design and Construction of Hospitals* | 2022 | adult ICU patient-room area clause |
-| ANSI/ASHRAE/ASHE 170-2025 | 2025 + 2026 errata | §6.4 filter-bank topology |
+| ANSI/ASHRAE/ASHE 170-2025 | 2025 + 2026 errata | §6.4 filter-bank topology (see §7 — determines whether MERV-14 applies to full supply or recirculation only) |
 | NBC India 2016 Part 8, Section 3 | 2016 | ICU rows in Tables 4, 6, 7 |
 | DIN 1946-4 | 2018-09 + /A1:2025-11 | Table 1, intensive-care classification |
 | CSA Z317.2; CSA Z8000 | to be named | ICU row; critical-care room area |
 
 ---
 
-## 8. Session limitation
+## 10. Session limitation
 
 Primary-document retrieval is not possible from this environment. Every
 outbound host tested returned an HTTP 403 policy denial at the egress gateway,
