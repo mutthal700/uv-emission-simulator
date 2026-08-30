@@ -548,3 +548,123 @@ def test_source_must_not_depend_on_the_guideline():
         _, b = room.coefficients(0.0, st.supply, f, V)
         out.append(room.steady_state(s_bar / V, b))
     assert out[0] > out[1], "more outdoor air must lower the steady state"
+
+
+# --- independent verification of the solver ----------------------------------
+from icu import verify as VER
+
+
+def test_step_satisfies_the_accumulation_identity():
+    """C(dt)-C0 must equal A*dt - B*integral(C), derived independently."""
+    V = I.ROOM_VOLUME_M3
+    for ach, f, pen, kdep in ((6.0, 1/3, 1.0, 0.0), (10.0, 0.24, 0.15, 1e-4),
+                              (12.0, 0.4, 0.5, 5e-5), (6.0, 1.0, 0.0, 2e-4)):
+        st = room.streams_from_ach(ach, f, V)
+        a, b = room.coefficients(3e-6, st.supply, f, V, penetration=pen,
+                                 k_dep_per_s=kdep, c_outdoor=400.0)
+        for dt in (60.0, 900.0, 3600.0):
+            for c0 in (0.0, 150.0, 900.0):
+                c1 = room.step(c0, a, b, dt)
+                r = VER.accumulation_residual(c0, c1, a, b, dt)
+                assert abs(r) < 1e-9 * max(1.0, abs(c1)), (ach, dt, c0, r)
+
+
+def test_flux_balance_closes_from_the_physical_streams():
+    """Balance rebuilt from streams, not from the collected A and B."""
+    V = I.ROOM_VOLUME_M3
+    for ach, f, pen, uv, kdep, cout in (
+            (6.0, 1/3, 1.0, 1.0, 0.0, 420.0),
+            (10.0, 0.24, 0.15, 1.0, 1e-4, 420.0),
+            (12.0, 0.4, 0.5, 0.3, 5e-5, 30.0),
+            (10.0, 0.528, 0.8, 1.0, 0.0, 0.0)):
+        st = room.streams_from_ach(ach, f, V)
+        a, b = room.coefficients(4e-6, st.supply, f, V, penetration=pen,
+                                 uv_survival=uv, k_dep_per_s=kdep,
+                                 c_outdoor=cout)
+        c0 = 500.0
+        c1 = room.step(c0, a, b, 900.0)
+        r = VER.flux_balance_residual(c0, c1, 4e-6, st.supply, f, V, 900.0,
+                                      penetration=pen, uv_survival=uv,
+                                      k_dep_per_s=kdep, c_outdoor=cout,
+                                      a=a, b=b)
+        assert abs(r) < 1e-9, (ach, f, pen, uv, r)
+
+
+def test_linearity_superposition_holds():
+    """The balance is linear in S, which the calibration argument relies on."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(6.0, 1/3, V)
+    def run(src):
+        a, b = room.coefficients(src, st.supply, 1/3, V)
+        c = 0.0
+        for _ in range(20):
+            c = room.step(c, a, b, 900.0)
+        return c
+    assert abs(run(1e-6) + run(3e-6) - run(4e-6)) < 1e-12
+
+
+def test_zero_source_decays_to_the_supply_contribution():
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(6.0, 0.5, V)
+    a, b = room.coefficients(0.0, st.supply, 0.5, V, penetration=0.4,
+                             c_outdoor=100.0)
+    c = 800.0
+    for _ in range(500):
+        c = room.step(c, a, b, 900.0)
+    assert abs(c - a / b) < 1e-9
+    assert c < 100.0  # filtered supply sits below outdoor
+
+
+def test_no_ventilation_accumulates_linearly():
+    V = I.ROOM_VOLUME_M3
+    a, b = room.coefficients(5e-6, 0.0, 0.0, V)
+    assert b == 0.0
+    c = room.step(0.0, a, b, 3600.0)
+    assert abs(c - 5e-6 * 3600.0 / V) < 1e-15
+
+
+def test_full_recirculation_without_a_filter_removes_nothing():
+    """f_OA=0, P=1 gives B=0: the physical reason outdoor air matters."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(10.0, 0.0, V)
+    _, b = room.coefficients(5e-6, st.supply, 0.0, V, penetration=1.0)
+    assert b == 0.0
+
+
+def test_full_recirculation_with_a_perfect_filter_removes_at_supply_rate():
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(10.0, 0.0, V)
+    _, b = room.coefficients(5e-6, st.supply, 0.0, V, penetration=0.0)
+    assert abs(b - st.supply / V) < 1e-15
+
+
+def test_stiff_system_stays_stable_over_a_long_step():
+    """A large B with a long dt must not overflow or oscillate."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(10.0, 1.0, V)
+    a, b = room.coefficients(1e-6, st.supply, 1.0, V, penetration=0.0,
+                             k_dep_per_s=1.0)
+    c = room.step(1e6, a, b, 3600.0)
+    assert math.isfinite(c) and abs(c - a / b) < 1e-12
+
+
+def test_diurnal_scenario_reaches_a_periodic_state():
+    from icu.intensity import Block, IntensityProfile, Level, calibrate_mean_source
+    V = I.ROOM_VOLUME_M3
+    p = IntensityProfile(
+        blocks=(Block(6, 2, Level.HIGH, "cleaning"),
+                Block(16, 2, Level.MEDIUM, "visiting")),
+        weights={Level.QUIET: 1.0, Level.MEDIUM: 4.0, Level.HIGH: 8.0})
+    st = room.streams_from_ach(6.0, 1 / 3, V)
+    _, b = room.coefficients(0.0, st.supply, 1 / 3, V)
+    s_bar = calibrate_mean_source(202.0, b, V)
+    phi = p.series([i * 900 / 3600 for i in range(96)])
+    c, means = 202.0, []
+    for _ in range(5):
+        tr = []
+        for k in range(96):
+            c = room.step(c, s_bar * phi[k] / V, b, 900.0)
+            tr.append(c)
+        means.append(sum(tr) / 96)
+    assert abs(means[-1] - means[-2]) < 1e-9          # periodic
+    assert abs(means[-1] - 202.0) < 1e-6              # calibration exact
