@@ -455,3 +455,114 @@ and 65 CFU/m³ fungi (47 respirable). Stage 1 is open-ended; any representative
 diameter for it is a modelling choice, not a measurement. Stage-specific
 distributions are graphical in Figures 1–2 and digitised values must not be
 presented as tabulated measurements.
+
+---
+
+## 16. ICU pollutant concentrations, type and size
+
+Per master §1.1 these are **validation regimes, not regulatory limits and not
+source inputs**. They are what a simulated distribution is checked against
+(D7), never what is fed in. Provenance tiers are kept apart.
+
+### 16.1 Physical character — this decides which removal terms apply
+
+| Pollutant | Type | Size basis | Removal available |
+|---|---|---|---|
+| CO₂ | gas | not applicable | dilution only |
+| TVOC | gas mixture, lumped surrogate | not applicable | dilution; adsorption only if a carbon stage is fitted |
+| PM₂.₅ | particulate **mass metric** | mass below 2.5 µm — *not a size distribution* | filtration, deposition |
+| PM₁₀ | particulate **mass metric** | mass below 10 µm — *not a size distribution* | filtration, deposition |
+| Bacteria | viable particulate | six Andersen stages, 0.65 µm to >7 µm | filtration, deposition, **UVGI** |
+| Fungi | viable particulate | six Andersen stages, 0.65 µm to >7 µm | filtration, deposition, **UVGI** |
+
+Two consequences that constrain the whole model:
+
+- **Neither gas is touched by the filter or the lamp.** CO₂ and TVOC are
+  dilution-controlled, so `f_OA` is the only lever on them. UVGI cannot help.
+- **PM₂.₅ and PM₁₀ are mass metrics, not size bins.** A size-resolved filter
+  efficiency cannot be applied to them directly; that needs `dN/dlogDp`, which
+  is blocked (§15). The viable species are the only ones with a verified size
+  structure.
+
+### 16.2 Verified concentrations
+
+Kim, Kim & Kim, *Industrial Health* 48(2):236–243 (2010), ICU rows:
+
+| Quantity | Value | Locator |
+|---|---|---|
+| Airborne bacteria, ICU total | 202 CFU/m³ | Table 2 |
+| Airborne bacteria, respirable | 142 CFU/m³ | Table 2, stages 3–6 |
+| Airborne fungi, ICU total | 65 CFU/m³ | Table 3 |
+| Airborne fungi, respirable | 47 CFU/m³ | Table 3, stages 3–6 |
+
+### 16.3 Reported in the project master, not yet locator-complete
+
+Carried from master §1.1 with partial attribution. Under the citation rule
+locked on 2026-08-29 these **cannot be promoted** until a full document title,
+edition and table/section with named row is supplied.
+
+| Pollutant | Clean | Moderate | India high | Event tail |
+|---|---|---|---|---|
+| CO₂ (ppm) | 450–800 | 828–1570 (Tang) | 1822–2258 (Aligarh) | occupancy/visitation peaks |
+| PM₂.₅ (µg/m³) | 1–5 | 20–35 | 50–98 | activity/cleaning peaks |
+| PM₁₀ (µg/m³) | 0.9–10 | 10–60 | 57–118 | can be much higher instantaneously |
+| Bacteria (CFU/m³) | 70–250 | 250–450 | 94–151 (Indian active sampler) | >1000 to ~7236 (Tang) |
+| Fungi (CFU/m³) | 2.6–70 | — | low single digits (Chennai) | >1000 to ~11654 (Tang) |
+| **TVOC** | **BLOCKED — no ICU concentration evidence held at all** | | | |
+
+### 16.4 Allowable limits
+
+No ICU-specific allowable limit for any pollutant is in evidence. Until one is
+found, "how much must be reduced" has no sourced target and the study can only
+report delivered concentration against the validation regimes above.
+
+---
+
+## 17. Diurnal model
+
+Occupancy `N(t)` carries the time variation; sources follow from it.
+
+### 17.1 Two routes to `N(t)`
+
+**Route A — schedule.** `occupancy.profile_from_events` builds `N(t)` from named
+events, each carrying a `source` field naming the document, section and
+revision. It **fails closed** on an empty schedule and rejects any event without
+a source, so the blocked SOP cannot be quietly replaced by a generic profile.
+
+**Route B — CO₂ inversion.** `occupancy.co2_inversion` runs the room balance
+backwards on a measured trace. No schedule is needed: occupancy is already
+encoded in the CO₂ signal. Inverting the exact solution rather than a finite
+difference:
+
+    a = exp(-(Q_OA / V) · Δt)
+    S_k = Q_OA · [C_{k+1} − a·C_k − C_out·(1 − a)] / (1 − a) / 10⁶
+
+Then, because the single-bed room fixes the patient count and the patient rate
+is measured (§11.1):
+
+    N_non-patient(t) = (S(t) − S_patient) / G_person
+
+Verified by round trip: a known occupancy is used to generate a CO₂ trace, the
+trace is inverted, and the occupancy is recovered to within 1e-9 — including at
+a deliberately coarse 1-hour step, which a finite-difference inversion would
+fail.
+
+### 17.2 Propagating `N(t)` to the other pollutants
+
+| Pollutant | Route | Status |
+|---|---|---|
+| CO₂ | patient at the measured ICU rate plus non-patients at Persily | closed |
+| Bacteria, fungi | shape from `N(t)`; magnitude calibrated so the simulated distribution reproduces the Kim ICU values | needs the ventilation conditions at Kim's measurement site to calibrate against |
+| PM | outdoor-driven component from the climate series, indoor resuspension scaled on `N(t)` | needs the size distribution (§15) |
+| TVOC | dilution only | no concentration evidence at all |
+
+Magnitudes are **calibrated against measured distributions**, never asserted as
+per-person emission factors, which no ICU study reports.
+
+### 17.3 What the diurnal model cannot yet do
+
+Route A is blocked on the SOP. Route B needs a measured ICU CO₂ trace *with its
+ventilation conditions* — Tier A source-reconstruction studies qualify, Tier B
+studies with incomplete HVAC metadata give shape but not magnitude. Until one of
+those arrives the machinery is built and tested but unfed, and Stage A proceeds
+on the steady-state occupancy levels of §1 instead.
