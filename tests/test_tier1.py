@@ -464,3 +464,87 @@ def test_pm_inversion_needs_more_than_co2_inversion():
     title, why, unmet = CAP.status()["pm_source_inversion"]
     assert "sinks" in why and "deposition" in why
     assert len(unmet) >= 2
+
+
+# --- intensity profile -------------------------------------------------------
+from icu import intensity as INT
+
+
+def _profile():
+    return INT.IntensityProfile(
+        blocks=(INT.Block(6.0, 2.0, INT.Level.HIGH, "bed bath, cleaning"),
+                INT.Block(16.0, 2.0, INT.Level.MEDIUM, "visiting")),
+        weights={INT.Level.QUIET: 1.0, INT.Level.LOW: 2.0,
+                 INT.Level.MEDIUM: 4.0, INT.Level.HIGH: 8.0})
+
+
+def test_shape_is_normalised_to_unit_mean():
+    p = _profile()
+    hours = [i / 4 for i in range(96)]
+    assert abs(sum(p.series(hours)) / 96 - 1.0) < 1e-12
+
+
+def test_shape_ordering_follows_the_levels():
+    p = _profile()
+    assert p.phi(7.0) > p.phi(17.0) > p.phi(3.0)
+
+
+def test_block_without_a_driver_is_blocked():
+    try:
+        INT.IntensityProfile(
+            blocks=(INT.Block(6.0, 1.0, INT.Level.HIGH, ""),),
+            weights={INT.Level.QUIET: 1.0, INT.Level.HIGH: 8.0})
+    except I.BlockedInput as e:
+        assert "driver" in str(e)
+        return
+    raise AssertionError("undriven block accepted")
+
+
+def test_undeclared_level_weight_is_blocked():
+    try:
+        INT.IntensityProfile(
+            blocks=(INT.Block(6.0, 1.0, INT.Level.HIGH, "cleaning"),),
+            weights={INT.Level.QUIET: 1.0})
+    except I.BlockedInput as e:
+        assert "weight" in str(e)
+        return
+    raise AssertionError("missing weight accepted")
+
+
+def test_calibration_reproduces_the_target_mean():
+    """S_bar from the target must give back the target at steady state."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(6.0, 1 / 3, V)
+    _, b = room.coefficients(0.0, st.supply, 1 / 3, V)
+    s_bar = INT.calibrate_mean_source(202.0, b, V)
+    a = s_bar / V
+    assert abs(room.steady_state(a, b) - 202.0) < 1e-9
+
+
+def test_calibration_is_independent_of_the_shape():
+    """The balance is linear in S, so the mean depends only on the mean source."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(6.0, 1 / 3, V)
+    _, b = room.coefficients(0.0, st.supply, 1 / 3, V)
+    s_bar = INT.calibrate_mean_source(202.0, b, V)
+    p = _profile()
+    phi = p.series([i * 900 / 3600 for i in range(96)])
+    c = 202.0
+    for _ in range(6):
+        trace = []
+        for k in range(96):
+            c = room.step(c, s_bar * phi[k] / V, b, 900.0)
+            trace.append(c)
+    assert abs(sum(trace) / 96 - 202.0) < 0.5
+
+
+def test_source_must_not_depend_on_the_guideline():
+    """Calibrating per scenario would normalise away the difference tested."""
+    V = I.ROOM_VOLUME_M3
+    s_bar = 1.0
+    out = []
+    for ach, f in ((6.0, 1 / 3), (10.0, 0.4)):
+        st = room.streams_from_ach(ach, f, V)
+        _, b = room.coefficients(0.0, st.supply, f, V)
+        out.append(room.steady_state(s_bar / V, b))
+    assert out[0] > out[1], "more outdoor air must lower the steady state"
