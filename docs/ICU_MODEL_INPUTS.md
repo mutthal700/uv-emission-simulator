@@ -119,6 +119,11 @@ value.**
 | Activity-based PM prediction | **DISABLED** | SOP timing; PM size distribution; `k_dep`. A **declared sensitivity scenario** is available instead |
 | PM source inversion from a trace | **DISABLED** | `k_dep`; PM size distribution; filter penetration. PM has sinks, so outdoor airflow alone is not enough |
 
+**Available now:** the guideline register; minimum outdoor-air arithmetic from
+accepted provisions; **equivalent occupants**, explicitly not a headcount;
+relative fan power as conditional arithmetic; and **declared sensitivity
+scenarios** through the full room–duct loop, always labelled as such.
+
 Still available: the guideline register, minimum outdoor-air arithmetic from
 accepted provisions, **equivalent occupants** (explicitly not a headcount), and
 relative fan power as conditional arithmetic on an assumed identical system
@@ -661,7 +666,7 @@ and its channel boundaries, sampling duration, the ICU's ventilation state
 during measurement, and the activity definition used. Plus SOP timing, plus
 `k_dep` and the bin structure to express any of it in.
 
-### 14.4 Two routes to occupancy, when it opens
+### 14.5 Two routes to occupancy, when it opens
 
 
 
@@ -730,6 +735,55 @@ on the steady-state occupancy levels of §1 instead.
 
 ---
 
+### 14.6 Low / medium / high intensity — the source term that feeds the duct
+
+This is the structure the source term actually uses, and it exists to reduce how
+much unsourced content it carries.
+
+Specifying an absolute emission rate per activity needs **N unsourced numbers**,
+none of which any ICU study reports. A low/medium/high intensity profile needs
+instead:
+
+- a dimensionless shape `φ(t)`, **normalised so its time-mean is exactly 1**;
+- **one** magnitude scalar `S̄` per species.
+
+      S_i(t) = S̄_i · φ(t)
+
+The shape claims only that cleaning emits more than a quiet night. The scalar
+carries all the units — and it is **calibrated against a measured mean
+concentration**, not declared:
+
+      S̄ = C_target_mean · B · V
+
+Because the balance is linear in `S`, the time-mean concentration depends only
+on the time-mean source. The calibration is therefore **exact for the mean and
+independent of the shape** — both properties are tested.
+
+#### Levels and blocks
+
+`QUIET / LOW / MEDIUM / HIGH`, assigned to time blocks. Enforcement, fail-closed:
+every block must name the **activity driver** that places it at that level, and
+every level used must have a **declared weight**. Weights are dimensionless
+ratios, not emission rates.
+
+#### The rule that makes the comparison valid
+
+**The source must not depend on the guideline.** `S̄` is calibrated **once** at a
+declared reference condition and then held fixed across every scenario. The ICU
+emits what it emits; the HVAC does not change the source. Calibrating per
+scenario gives each guideline its own emission and normalises away the very
+difference being tested — this was a real bug, caught by every scenario
+returning an identical mean, and there is now a test guarding it.
+
+#### The loop
+
+    source S_i(t) → room → return = room concentration → duct inlet
+        → filter P_i and UV Z_i on MIXED air → duct outlet → supply → room
+
+stepped with the exact recurrence over 96 quarter-hour intervals until periodic.
+
+---
+
 ---
 
 # PART IV — RESULTS
@@ -762,16 +816,36 @@ ACCEPTED provisions, DERIVED arithmetic at `Q_supply = 750 m³/h`:
 | 5 | **180 m³/h · 2.40 ACH · 0.240** | 150 m³/h · 0.200 |
 | 11 | **396 m³/h · 5.28 ACH · 0.528** | 150 m³/h · 0.200 |
 
-### 15.3 CO₂ excess at the controlling minimum outdoor air
+### 15.3 CO₂ — WITHDRAWN
 
-DERIVED, at a **researcher-selected** evaluation state (§7.1); the actual ICU
-room state is blocked, so these are not source-backed concentrations.
+The patient-inclusive figures reported earlier (356 / 505 / 514 / 1356 ppm) are
+withdrawn. They are gated on the ventilator/circuit configuration and the actual
+room gas state, both blocked. See §0.8.
 
-| N | G2 (HTM) | G4 (SHTM) | G5 (ISCCM) | G9 (India 2022) |
-|---|---|---|---|---|
-| 3 | 356 | 356 | 356 | **178** |
-| 5 | **505** | 606 | 606 | **303** |
-| 11 | **514** | 1356 | 1356 | **678** |
+### 15.4 24-hour activity scenario
+
+**DECLARED SENSITIVITY SCENARIO, not an ICU prediction.** Shape and filter
+penetration are declared; the calibration target (Kim 2010, 202 CFU/m³) and the
+guideline control parameters are sourced. `k_dep = 0` because deposition is
+blocked, which understates removal. Source calibrated once and held fixed.
+
+No filter credit (`P = 1`):
+
+| | ACH | f_OA | `B` (1/h) | mean | peak | at | peak/mean |
+|---|---|---|---|---|---|---|---|
+| G1 | 6 | 0.333 | 2.00 | 202 | 763 | 07:45 | 3.78 |
+| G2 | 10 | 0.240 | 2.40 | 168 | 642 | 07:45 | 3.81 |
+| G5 | 6 | 0.333 | 2.00 | 202 | 763 | 07:45 | 3.78 |
+| **G9** | 10 | 0.400 | **4.00** | **101** | **388** | 07:45 | 3.84 |
+
+With a declared `P = 0.15`: G1 202, G2 123, G5 202, G9 120 — the two 10 ACH
+scenarios converge once filtration dominates, because at high single-pass
+removal the outdoor-air difference stops mattering.
+
+**Peak timing is identical across all scenarios (07:45).** With a fixed source,
+the guideline sets the *level* and the activity schedule sets the *timing*. That
+separation is what makes peak-following control worth investigating: the peak is
+source-driven, so there is something real for control to anticipate.
 
 ## 16. Findings, and what was withdrawn
 
@@ -805,9 +879,33 @@ rows**, not as proven internal inconsistency.
 | "Four of eight guidelines are incomplete" | G1 and G8 are *blocked*, not known; not every named edition has been checked |
 | The clean / moderate / India-high / event-tail regime table | analyst-created categories with several misattributions (§11) |
 
-# PART V — PROVENANCE
+# PART V — IMPLEMENTATION AND PROVENANCE
 
-## 17. Sources
+## 17. Code map
+
+| Module | Holds |
+|---|---|
+| `src/icu/inputs.py` | cited constants; `GasState` with reference `T`,`P` and `to_molar()`; fail-closed `_Blocked` sentinels |
+| `src/icu/scenarios.py` | G1–G9 with locators; `FreshAirRule` implementing max(fraction, per-person) |
+| `src/icu/room.py` | stream balance; `coefficients()` for any species with the filter on mixed air; exact recurrence |
+| `src/icu/species.py` | state vector; PM metrics as **integrals over bins**, not states |
+| `src/icu/occupancy.py` | CO₂ inversion; `non_patient_source`; `equivalent_occupants`; gated `headcount` |
+| `src/icu/activity.py` | activity emissions in PREDICTION vs SENSITIVITY mode |
+| `src/icu/intensity.py` | normalised low/med/high shape; `calibrate_mean_source` |
+| `src/icu/capabilities.py` | eight capability gates, all currently disabled |
+| `scripts/list_inputs.py` | prints the input register from the code |
+| `scripts/run_stage_a.py` | guideline status, UK outdoor-air minima, capability status |
+| `scripts/run_diurnal_scenario.py` | 24-hour activity scenario through the loop |
+| `tests/test_tier1.py` | 56 tests |
+
+Tests worth knowing about, because they guard against specific past errors: the
+recurrence is exact not Euler (one step of Δt equals two of Δt/2); the general
+balance collapses to `B = Q_OA/V` for a dilution-only species; UV and filter
+penetration enter as a product; no scenario may claim ASHRAE 170-2025; no
+Altunalan value can return; prediction mode refuses declared factors; and more
+outdoor air must lower the steady state.
+
+## 18. Sources
 
 1. AHIA, *AusHFG Room Data Sheet, 1 Bed Room – Intensive Care, 1BR-ICU*, Rev 2, 12.11.2025 — read in full in session, including page-1 checkbox state resolved by rendering.
 2. ANSI/ASHRAE/ASHE *Standard 170-2025*, Table 7-1, critical care patient care station.
@@ -826,7 +924,7 @@ rows**, not as proven internal inconsistency.
 Audits held at `docs/sources/`: guideline archive verification, Q2/Q4/Q11/Q19
 audit, CO₂ generation audit, project master v9.
 
-## 18. Corrections log
+## 19. Corrections log
 
 | Date | Correction |
 |---|---|
@@ -838,3 +936,13 @@ audit, CO₂ generation audit, project master v9.
 | 2026-08-29 | **Occupancy output relabelled** "equivalent occupants"; the recoverable quantity is source strength, not headcount. |
 | 2026-08-29 | **CO₂ temporal profile is for CO₂ only.** An occupancy-shaped profile for bacteria, fungi, PM or TVOC is not evidenced; magnitude calibration does not supply one. |
 | 2026-08-29 | **Round-trip is an implementation test**, not validation against independent measurement. |
+| 2026-08-30 | **HTM 03-01:2021 §8.6 bounds UK outdoor air** (≥10 L/s·person, ≥20 % if recirculating). The finding that it could approach zero is withdrawn; the 5 % and 10 % sweep points were noncompliant. |
+| 2026-08-30 | **ASHRAE reinstated as 170-2021**, Table 7-1, on the researcher's attestation. It had been mislabelled 170-2025, which is not in evidence. |
+| 2026-08-30 | **MoHFW India, March 2022 added as G9** — 10–12 ACH, 4–5 fresh-air ACH, 23 ± 2 °C, 45–65 % RH. |
+| 2026-08-30 | **Pollutant regime table withdrawn.** Taushiba measured no CO₂ and was Lucknow not Aligarh; 151 CFU/m³ is a PICU isolation category; Tang reports PM₁₀ 4.2–43.7 and uses PM₂. |
+| 2026-08-30 | **`k_dep` reclassified as blocked** under the no-proxy rule; generic non-ICU aerosol literature is not an ICU input. |
+| 2026-08-30 | **Energy row corrected** — fan mechanical efficiency and motor IE class are different quantities. |
+| 2026-08-30 | **Evaluation state relabelled researcher-selected.** The +8.5–8.8 % shift is not source data. |
+| 2026-08-30 | **Capability gating added.** Eight classes of result disabled in code, not prose. |
+| 2026-08-30 | **MERV-14 acts on mixed air** — researcher-defined topology, not citable as an ASHRAE requirement while §6.4 is unheld. |
+| 2026-08-30 | **Source calibration must not depend on the guideline.** Calibrating per scenario normalised away the difference being tested; caught by every scenario returning an identical mean. |
