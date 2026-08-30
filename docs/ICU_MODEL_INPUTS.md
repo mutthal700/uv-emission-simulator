@@ -17,90 +17,97 @@ geometry and is absent, not estimated.
 
 ---
 
-# PART I — GAPS TO CLOSE
+# PART I — GAP REGISTER
 
-Ordered by what each unblocks, not by how hard it is. The seven in §0.1 are
-cheap and unblock the most.
+Revised 2026-08-30. Ordered by what each unblocks. Nothing here is filled by
+assumption, proxy or placeholder.
 
-## 0.1 Do these first
+## 0.1 Closed since the last revision
+
+| Gap | Closed by |
+|---|---|
+| HTM general fresh-air provisions | **HTM 03-01:2021 §8.6 p41**, see also §9.120: fresh air ≥ 10 L/s·person; where recirculating, ≥ 20 % or the person-based figure, whichever is greater. **SHTM 03-01:2014 §2.37 p26** gives the 20 % fraction only. The two are not combined. |
+| The unnamed Indian national guideline | **MoHFW, *Guidelines for HDU & ICU*, March 2022**, p24 and Annexure III p47 — carried as **G9**, not merged with ISCCM |
+
+## 0.2 Do these first
 
 | # | Gap | Why it matters | What closes it |
 |---|---|---|---|
-| 1 | **Patient ventilator exhaust path** | Decides whether patient VCO₂ is a room source **at all**. If the expiratory limb is scavenged, the largest single CO₂ term disappears and every CO₂ result changes. | One line of site documentation: does the ventilator discharge expired gas to room air, or to a scavenging/exhaust connection? |
-| 2 | **Staff/visitor demographic scenario** | Persily Table 4 varies by sex and age; the male 21–<30 row cannot stand for nurses, doctors, visitors and cleaners. This is a **declaration you make**, not data to find. | State the sex/age/met composition you want to model, and it becomes a declared scenario with a sensitivity range. |
-| 3 | **Five-city climate data** (hourly T, RH, PM₂.₅, PM₁₀) | Turns every outdoor-air conditioning **ratio** into absolute kWh, and supplies `C_out` for PM. You already hold this. | Send the files, with temporal resolution stated. |
-| 4 | **Outdoor CO₂ baseline per zone** | Converts CO₂ **excess** to absolute ppm, which is what any allowable limit is written against. | A sourced outdoor CO₂ value per climate zone. |
-| 5 | **Locators for the master §1.1 regime table** | Those CO₂/PM/bacteria/fungi ranges are the validation targets for D7. Without full locators they cannot be promoted under your own citation rule. | Document title, edition/year, table/section with named row for the Tang, Aligarh and Chennai entries. |
-| 6 | **Victoria HTG-2020-004 "Reference table 1"** | §4.173 points to it; it very likely carries the air-change rate. G6 is currently unsimulatable for want of one number. | The missing table from the Victorian guideline. |
-| ~~7~~ | ~~HTM general fresh-air clauses~~ | **CLOSED 2026-08-30.** HTM 03-01:2021 §8.6 (p41), see also §9.120: fresh air ≥ **10 L/s per person**; where air is recirculated, minimum fresh air is **20 %** or the person-based requirement, **whichever is greater**. SHTM 03-01:2014 §2.37 (p26) gives the 20 % fraction only. The earlier finding that UK outdoor air was unbounded is **withdrawn**. | — |
+| 1 | **ASHRAE 170 Table 7-1 critical-care row** | ASHRAE 170 *does* carry this row — in 2021 and in 2025. Neither edition is in evidence: the only ASHRAE file held is **Addendum h to 170-2021**, which revises §8.1/8.2 and Tables 8-1/8-2 for outpatient and residential spaces and never touches Table 7-1. Without the row there is no US scenario at all. | The row itself, **with its edition named**. Paste it as you did the HTM rows. See the question in §0.8. |
+| 2 | **Patient ventilator exhaust path** | Decides whether patient VCO₂ is a room source **at all**. If the expiratory limb is scavenged, the largest CO₂ term disappears. | One line of site documentation. |
+| 3 | **Actual ICU room temperature and pressure** | Every CO₂ figure is currently evaluated at a *researcher-selected* 297.15 K / 101325 Pa. Until the room state is measured, no CO₂ result is source-backed. | Site measurement, or accept the molar route and report molar quantities. |
+| 4 | **Staff/visitor demographic scenario** | A **declaration you make**, not data to find. Persily's male 21–<30 row cannot stand for nurses, doctors, visitors and cleaners. | State the sex/age/met composition to model. |
+| 5 | **Five-city climate data** (hourly T, RH, PM₂.₅, PM₁₀) | Turns conditioning ratios into absolute energy and supplies `C_out` for PM. You hold this. | Send the files with temporal resolution stated. |
+| 6 | **Outdoor CO₂ baseline per zone** | Converts CO₂ **excess** to absolute ppm — the form any limit is written in. | A sourced value per zone. |
+| 7 | **Victoria HTG-2020-004 Reference Table 1 and 2** (30 May 2020) | G6 has 50 % outside air and remote HEPA but **no air-change rate**; §4.173 points at this table. | The missing tables. |
 
-## 0.2 Guideline completeness
+## 0.3 Guideline rows still blocked
 
-| Gap | Status | What closes it |
-|---|---|---|
-| AusHFG Part E, or AS 1668.2:2012/2024 | **Australia has geometry but no ventilation requirement at all** | the intensive-care ventilation entry with its table/section |
-| **ASHRAE 170-2025 — the entire critical-care row** | **Escalated 2026-08-30.** The supplied ASHRAE file is only *Addendum h to 170-2021* (outpatient revisions). The 2025 inpatient critical-care row was never in evidence, so **every G1 value is withdrawn**, including MERV-14, 6/2 ACH, N/R pressure and the 21–24 °C / 30–60 % band | Table 7-1 critical-care patient care station row **and** §6.4, from the 2025 edition with current errata |
-| Indian national guideline — **now closed** | MoHFW *Guidelines for HDU & ICU*, March 2022 supplies 10–12 ACH, 4–5 fresh-air ACH, 23 ± 2 °C, 45–65 % RH, fine filters, positive pressure. Carried as **G9**, not merged with ISCCM | — |
-| Other Indian documents (6–12 ACH, OA 2 to 4–5 ACH spread) | named in the master without locators, so they cannot become scenarios | document title, edition, table/section per document |
-| NBC India 2016 Part 8 §3 | absent | ICU rows of Tables 4, 6, 7 |
-| DIN 1946-4:2018-09 + A1:2025-11 | absent; only the 2008 edition is held, as history | Table 1 room classification and the intensive-care row |
-| NF S 90-351 | only secondary explanatory material held | the AFNOR normative filtration/topology clauses |
-| FGI 2022 adult ICU area clause | absent | the room-area clause (geometry is already closed, so this is corroboration) |
-| CSA Z317.2 / Z8000 | optional | ICU row; critical-care room area, with edition named |
+| Document | What is missing |
+|---|---|
+| **ASHRAE 170**, edition named | Table 7-1 critical-care row: pressure relationship, min outdoor ACH, min total ACH, all-air-exhausted, room-unit recirculation, RH, temperature. **Plus §6.4** for filter-bank topology and affected airstream |
+| **FGI 2022**, §2.2-2.6.2.2 | the adult critical-care room-area clause. The "Major Additions and Revisions" extract is not the guideline, and a 2018 value must not be carried into 2022 |
+| **AS 1668.2:2024** or **2012** | the healthcare/ICU entry. AusHFG Part E does **not** close this — Part E is a general services overview, retired in 2018 |
+| **SP 7:2016 NBC India, Part 8 §3** | the normative ICU rows and notes |
+| **NABH 6th ed., Jan 2025** | the complete relevant clauses. One COP.9 excerpt cannot prove HVAC values are absent throughout the edition |
+| **DIN 1946-4:2018-09** + A1:2025-11 | Table 1, the intensive-care room class and its requirements. Only the 2008 edition is held, as history |
+| **NF S 90-351**, edition named | the AFNOR normative filtration/air-treatment clauses. Secondary material is inadmissible |
+| **CSA Z317.2 / Z8000**, editions named | ICU ventilation row; adult critical-care room area |
+| **ISO 8996**, edition named | the activity table. Persily's activity examples must not be relabelled as ISO 8996 |
 
-## 0.3 Filter — the whole of Tier 2 depends on this
+## 0.4 Filter — all of Tier 2 depends on this
 
-The guidelines give filter **classes**, never efficiency curves. MERV-14, EPA10,
-SUP1, F7 and "99 % down to 5 µm" cannot produce `P_i(dp)`.
+The guidelines give **descriptors**, never curves: EPA10, SUP1, F7, "99 % down to
+5 µm", "fine filters", remote HEPA. SUP1 is a supply-air designation, not a
+product efficiency.
 
 | Gap | What closes it |
 |---|---|
-| **Fractional efficiency η(dp)** for candidate products | manufacturer curves at the duty point. This is the real requirement — test standards define *how* to measure, products define *what* the curve is |
+| Fractional efficiency `η(dp)` | manufacturer curves at the project duty point |
 | Clean ΔP and loading curve | manufacturer data at rated flow, plus dust-holding capacity |
-| Class definitions, for compliance checking only | ASHRAE 52.2, BS EN 1822, ISO 16890, EN 779 |
+| Airstream topology | ASHRAE §6.4 — which bank sits where relative to the recirculation path |
 
-Two constraints that must not be violated:
+Constraints: **MERV E1/E2/E3 are reporting bands, not particle-state bins.** A
+lower project face velocity does **not** by itself establish an efficiency or a
+pressure drop — product data at the operating point is required.
 
-- **MERV E1/E2/E3 are reporting bands, not model bins.** Substituting them for
-  the PM state bins is a category error.
-- Curves measured at a rated face velocity do not apply directly here: at
-  6 and 10 ACH this duct runs at **0.53 and 0.88** of a 2.54 m/s reference, so
-  efficiency is higher and ΔP lower than rated.
-
-## 0.4 Pollutant state
+## 0.5 Pollutant state
 
 | Gap | Consequence while open |
 |---|---|
-| **ICU PM size distribution** `dN/dlogDp` or `dM/dlogDp` | PM₂.₅ and PM₁₀ are mass metrics, not distributions. No size-resolved filtration or deposition can be applied to PM at all |
-| **TVOC ICU concentration** | no evidence of any kind; TVOC cannot be modelled |
-| **ICU allowable limits** | **"how much must we reduce" has no sourced target.** The study can only report delivered concentration against validation regimes |
-| Deposition model + room S/V | obtainable from generic aerosol literature — not ICU-specific, so not truly blocked |
+| **ICU PM size distribution** `dM/dlogDp` | PM₂.₅ and PM₁₀ are mass metrics. No size-resolved filtration or deposition can touch PM. Kim's Andersen bins cover **viable aerosols only** and do not close this |
+| **Deposition `k_dep`** | blocked under the no-proxy rule. Needs a directly applicable formulation **plus** this room's S/V ratio, surface conditions, airflow regime and a compatible size distribution |
+| **TVOC** | no verified ICU concentration of any kind |
+| **ICU allowable limits** | "how much must we reduce" has no target. Blocked *in the inspected evidence* — not a claim that none exists |
 
-## 0.5 Temporal — Stage C only
-
-Stage A and Stage B are **not blocked** by these, because every guideline sees
-the same occupancy.
+## 0.6 Temporal — Stage C
 
 | Gap | What closes it |
 |---|---|
-| ICU SOP / IPC event schedule | hospital document with unit, number, revision, effective date, section, approval status |
-| Measured ICU CO₂ trace **with its ventilation conditions** | a Tier A source-reconstruction study; Tier B gives shape but not magnitude |
-| ISO 8996:2021 activity values | licensed pages of the activity table; no substitute may be relabelled as ISO 8996 |
-| Bacteria/fungi temporal route | direct ICU evidence that viable emission tracks occupancy. Magnitude calibration does **not** supply this |
+| ICU SOP / IPC event schedule | hospital document with unit, number, revision, effective date, section, approval status. A generic schedule cannot substitute |
+| Measured ICU CO₂ trace | trace **and** sensor metadata, outdoor CO₂, time-resolved outdoor airflow, and the exhaust path, all over the same intervals |
+| Headcount mapping | heterogeneous source-rate information. Without it the inversion yields **equivalent occupants**, not people |
+| Bacteria/fungi temporal route | direct pollutant-specific ICU evidence. The CO₂ shape must not be transferred |
 
-## 0.6 Energy
+## 0.7 Energy
 
 | Gap | Consequence while open |
 |---|---|
-| System pressure drop at a duty point | only fan power **ratios** are available, not absolute watts |
-| Room thermal loads | the reheat penalty is invisible, and it falls hardest on the 10 ac/h rows |
-| Actual fan and chiller performance | not required for a comparison — code minima serve, since the same plant serves every scenario |
+| System ΔP per duty point and loading state | no absolute fan power |
+| Fan, motor and drive efficiency maps | **fan mechanical efficiency and motor IE class are different quantities** and cannot be combined |
+| Chiller performance vs load and outdoor state | ECBC code minima are a compliance baseline, not plant performance |
+| Coil, dehumidification and reheat configuration | reheat penalty invisible; it falls hardest on the 10–12 ACH rows |
+| ICU sensible and latent loads | zero-load and high-load are **test cases**, not sourced inputs |
 
-## 0.7 Not blocking
+## 0.8 Question outstanding
 
-Rousing's numeric pressure basis (GE states STPD and 0 °C dry but no pressure).
-Kagan is fully referenced and sufficient; Rousing simply cannot be
-pressure-harmonised and is carried unconverted.
+The values previously carried for G1 — 6 total / 2 outdoor ACH, N/R pressure,
+MERV-14, 30–60 % RH, 21–24 °C — were recorded as **170-2025 Table 7-1** on the
+basis of images that neither later audit could re-inspect. Since 170-2021 also
+carries a critical-care row: **which edition do you actually hold, and were
+those figures the 2021 row?** If they were, this is a relabelling rather than a
+re-sourcing, and G1 reopens as an explicitly 2021 scenario as soon as you paste
+the row with its locator.
 
 ---
 

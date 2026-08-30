@@ -67,11 +67,15 @@ SHTM_FRESH_AIR = FreshAirRule(
 )
 
 GUIDELINES = [
-    Guideline("G1", "ANSI/ASHRAE/ASHE 170-2025",
-              "Table 7-1 critical care row and §6.4 — NOT IN EVIDENCE",
-              blocked="The supplied ASHRAE file is Addendum h to 170-2021 "
-                      "(outpatient revisions), not the 2025 inpatient "
-                      "critical-care row. No 170-2025 value may be used."),
+    Guideline("G1", "ANSI/ASHRAE/ASHE 170 (edition to be named)",
+              "Table 7-1, critical care patient care station — AWAITING THE ROW",
+              blocked="ASHRAE 170 does carry an inpatient critical-care row in "
+                      "Table 7-1, in the 2021 edition and in 2025. Neither is "
+                      "in evidence here: the only ASHRAE file held is Addendum "
+                      "h to 170-2021, which revises Sections 8.1/8.2 and Tables "
+                      "8-1/8-2 for outpatient and residential spaces and does "
+                      "not touch Table 7-1. Closing this needs the row itself "
+                      "plus its edition; a 2021 row must be labelled 2021."),
     Guideline("G2", "HTM 03-01 Part A, 2021",
               "Table 3, Level 2/3 critical care individual room/open bays, p64",
               ach_total=10.0, fresh_air_rule=HTM_FRESH_AIR,
