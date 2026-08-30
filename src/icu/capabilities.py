@@ -63,6 +63,22 @@ CAPABILITIES = {
         "Control that responds to occupancy needs an evidenced occupancy "
         "history, not a declared scenario.",
     ),
+    "activity_pm_prediction": (
+        "Activity-based PM prediction for an ICU",
+        lambda: _unmet(I.OCCUPANCY_SCHEDULE, I.ICU_PM_SIZE_DISTRIBUTION,
+                       I.K_DEPOSITION),
+        "Needs ICU-sourced emission factors per activity and size bin, the SOP "
+        "event timing, and the bin structure to express them in. A DECLARED "
+        "sensitivity scenario is available instead and is not a prediction.",
+    ),
+    "pm_source_inversion": (
+        "Recovering PM sources from a measured trace",
+        lambda: _unmet(I.K_DEPOSITION, I.ICU_PM_SIZE_DISTRIBUTION,
+                       I.SYSTEM_PRESSURE_DROP_PA),
+        "Unlike CO2, PM has sinks. Inverting a measured PM trace requires the "
+        "deposition rate, the filter penetration and the outdoor series over "
+        "the same intervals; outdoor airflow alone is not sufficient.",
+    ),
     "absolute_energy": (
         "Absolute energy results",
         lambda: _unmet(I.SYSTEM_PRESSURE_DROP_PA, I.FAN_EFFICIENCY),

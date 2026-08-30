@@ -376,3 +376,91 @@ def test_gases_declare_no_particulate_pathway():
     for v in ("bacteria", "fungi"):
         assert SPECIES[v].uv_susceptible and SPECIES[v].binned
     assert not SPECIES["PM"].uv_susceptible
+
+
+# --- activity model ----------------------------------------------------------
+from icu import activity as ACT
+
+
+def _declared_activity():
+    return ACT.Activity(
+        "bed making", 7.0, 0.5, ("nurse",), "SOP X s.4 rev 2",
+        (ACT.EmissionFactor("PM", (0.0, 0.0, 1e-9, 2e-9, 3e-9, 1e-9),
+                            ACT.Basis.DECLARED),))
+
+
+def test_sourced_factor_requires_a_locator():
+    try:
+        ACT.EmissionFactor("PM", (1e-9,), ACT.Basis.SOURCED)
+    except ValueError as e:
+        assert "locator" in str(e)
+        return
+    raise AssertionError("sourced factor accepted without a locator")
+
+
+def test_prediction_mode_rejects_declared_factors():
+    try:
+        ACT.Schedule((_declared_activity(),), ACT.Mode.PREDICTION).validate()
+    except I.BlockedInput as e:
+        assert "SENSITIVITY" in str(e)
+        return
+    raise AssertionError("prediction mode accepted a declared factor")
+
+
+def test_sensitivity_mode_runs_but_is_labelled():
+    s = ACT.Schedule((_declared_activity(),), ACT.Mode.SENSITIVITY)
+    assert "not an ICU prediction" in s.label
+    assert s.source_series("PM", 6, [7.25])[0][4] == 3e-9
+    assert s.source_series("PM", 6, [9.0])[0] == (0.0,) * 6  # outside the window
+
+
+def test_activity_without_timing_source_is_blocked():
+    a = ACT.Activity("cleaning", 6.0, 1.0, ("cleaner",), "", ())
+    try:
+        ACT.Schedule((a,), ACT.Mode.SENSITIVITY).validate()
+    except I.BlockedInput:
+        return
+    raise AssertionError("untimed activity accepted")
+
+
+def test_empty_schedule_fails_closed():
+    try:
+        ACT.Schedule((), ACT.Mode.SENSITIVITY).validate()
+    except I.BlockedInput:
+        return
+    raise AssertionError("empty schedule accepted")
+
+
+def test_bin_mismatch_is_refused_not_rebinned():
+    a = ACT.Activity("x", 1.0, 1.0, ("nurse",), "SOP",
+                     (ACT.EmissionFactor("PM", (1e-9, 2e-9), ACT.Basis.DECLARED),))
+    try:
+        ACT.Schedule((a,), ACT.Mode.SENSITIVITY).source_series("PM", 6, [1.5])
+    except ValueError as e:
+        assert "channel boundaries" in str(e)
+        return
+    raise AssertionError("silently re-binned")
+
+
+def test_species_with_no_factor_contributes_zero_in_sensitivity_only():
+    a = ACT.Activity("walking", 8.0, 1.0, ("nurse",), "SOP", ())
+    s = ACT.Schedule((a,), ACT.Mode.SENSITIVITY)
+    assert s.source_series("PM", 6, [8.5])[0] == (0.0,) * 6
+    try:
+        ACT.Schedule((a,), ACT.Mode.PREDICTION).validate()
+    except I.BlockedInput as e:
+        assert "zero-by-default" in str(e)
+        return
+    raise AssertionError("prediction mode allowed a missing factor")
+
+
+def test_activity_and_pm_inversion_capabilities_are_disabled():
+    assert not CAP.enabled("activity_pm_prediction")
+    assert not CAP.enabled("pm_source_inversion")
+
+
+def test_pm_inversion_needs_more_than_co2_inversion():
+    """CO2 inverts from Q_OA alone; PM has sinks and needs k_dep and P too."""
+    title, why, unmet = CAP.status()["pm_source_inversion"]
+    assert "sinks" in why and "deposition" in why
+    assert len(unmet) >= 2

@@ -116,6 +116,8 @@ value.**
 | Deposition modelling | **DISABLED** | `k_dep` under the no-proxy rule; PM size distribution |
 | Stage C responsive control | **DISABLED** | occupancy schedule; observed composition |
 | Absolute energy | **DISABLED** | system ΔP; fan/motor/drive efficiency |
+| Activity-based PM prediction | **DISABLED** | SOP timing; PM size distribution; `k_dep`. A **declared sensitivity scenario** is available instead |
+| PM source inversion from a trace | **DISABLED** | `k_dep`; PM size distribution; filter penetration. PM has sinks, so outdoor airflow alone is not enough |
 
 Still available: the guideline register, minimum outdoor-air arithmetic from
 accepted provisions, **equivalent occupants** (explicitly not a headcount), and
@@ -617,6 +619,47 @@ own evidenced route.
 **The only temporal driver currently reachable is outdoor climate, for PM.**
 Every indoor driver is blocked. Until they close, runs are **declared
 steady-state scenarios**, not a diurnal profile.
+
+### 14.4 Activity-based PM emission
+
+Occupants do emit PM through daily activity — bed making, washing, cleaning,
+walking, rounds, visitor entry, dressing changes. The model supports this, in
+**two modes that are kept strictly apart**, following the rule already set for
+staff demographics: a researcher declaration yields a labelled sensitivity
+scenario, not representative ICU data.
+
+| Mode | Requires | Produces |
+|---|---|---|
+| **PREDICTION** | an ICU source locator on **every** emission factor, and SOP timing on every activity | a result about an ICU. **Currently unreachable** |
+| **SENSITIVITY** | declared factors, SOP timing still required | a **labelled sensitivity scenario** — explicitly not an ICU prediction |
+
+Enforcement, tested rather than documented: a `SOURCED` factor without a locator
+is rejected at construction; prediction mode refuses a `DECLARED` factor and
+refuses an activity with no factor at all, since zero-by-default is itself an
+assumption; a factor whose bin count differs from the state is **refused, not
+re-binned**, because re-binning a measured distribution needs the original
+channel boundaries.
+
+#### Why PM cannot be inverted the way CO₂ can
+
+This shapes the acquisition order and is worth stating plainly.
+
+CO₂ has **no sinks** in this system — no filter, no deposition, no UV — so its
+balance contains only `Q_OA`, and a measured trace inverts to a source with
+outdoor airflow alone.
+
+PM has sinks. Its balance carries `P` and `k_dep` as well as `f_OA` and
+`C_out(t)`. **A measured ICU PM trace therefore cannot be inverted into a source
+until deposition and filter penetration are known.** Getting a PM time series
+does not, by itself, unlock a PM source model the way a CO₂ trace unlocks
+occupancy.
+
+#### What would close prediction mode
+
+For each activity and species: emission rate **per size bin**, the instrument
+and its channel boundaries, sampling duration, the ICU's ventilation state
+during measurement, and the activity definition used. Plus SOP timing, plus
+`k_dep` and the bin structure to express any of it in.
 
 ### 14.4 Two routes to occupancy, when it opens
 
