@@ -59,8 +59,7 @@ row("PARAMETER", "VALUE", "UNIT", "SOURCE")
 print("-" * W)
 row("Chiller COP <260 kWr", f"{I.CHILLER_COP_LT_260KW}", "-", "ECBC 2017 9.4.2.8 Table 9-5")
 row("Chiller COP >=260 kWr", f"{I.CHILLER_COP_GE_260KW}", "-", "ECBC 2017 9.4.2.8 Table 9-5")
-for k, v in I.FAN_MECH_EFF.items():
-    row(f"Fan mech eff, {k}", f"{v:.2f}", "-", "ECSBC 2024 6.3.1 Tables 6.9-6.11")
+row("Fan efficiency", "BLOCKED", "-", "IE class is not fan mechanical efficiency")
 
 hdr("6. GUIDELINE SCENARIOS")
 print("%-4s %-6s %-9s %-9s %-22s %-9s %-10s %s" %
@@ -79,6 +78,8 @@ for g in GUIDELINES:
         f"{g.rh_pct[0] or ''}-{g.rh_pct[1]}" if g.rh_pct else "-"))
 
 hdr("7. BLOCKED - FAIL CLOSED, RAISES ON USE")
-for b in (I.OUTDOOR_CO2_PPM, I.SYSTEM_PRESSURE_DROP_PA,
-          I.ICU_PM_SIZE_DISTRIBUTION, I.OCCUPANCY_SCHEDULE):
+for b in (I.OUTDOOR_CO2_PPM, I.SYSTEM_PRESSURE_DROP_PA, I.K_DEPOSITION,
+          I.ICU_PM_SIZE_DISTRIBUTION, I.OCCUPANCY_SCHEDULE, I.FAN_EFFICIENCY,
+          I.ROOM_ACTUAL_T_P, I.STAFF_VISITOR_DEMOGRAPHICS,
+          I.PATIENT_EXHAUST_PATH, I.VCO2_PATIENT_ROUSING_PRESSURE_BASIS):
     print(f"  {b.name}\n      closes with: {b.closes_with}")

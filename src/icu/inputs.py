@@ -108,24 +108,41 @@ VCO2_MALE_21_30_BY_MET = {
     for met, v in ((1.0, 3.90e-6), (1.2, 4.80e-6), (1.4, 5.60e-6), (1.6, 6.40e-6))
 }
 
-# --- Declared model evaluation state -----------------------------------------
-# Room flows and ppm are at actual room conditions, so gas-referenced sources
-# must be converted to this state before entering the balance. These are
-# DECLARED model parameters, not sourced values.
-ROOM_EVAL_T_K = 297.15    # 24 degC, top of the common guideline band
-ROOM_EVAL_P_PA = 101325.0
+# --- Researcher-selected evaluation state ------------------------------------
+# NOT a measured ICU condition. Any CO2 result computed at this state, and the
+# resulting shift relative to the source reference states, is researcher-defined
+# arithmetic and must never be presented as source data. Prefer the molar route
+# until the actual room temperature and pressure are measured.
+RESEARCHER_EVAL_T_K = 297.15
+RESEARCHER_EVAL_P_PA = 101325.0
+
+ROOM_ACTUAL_T_P = _Blocked(
+    "measured ICU room temperature and pressure",
+    "site measurement; until then any volumetric evaluation state is "
+    "researcher-selected and results carry that label",
+)
 
 
-def source_at_room_state(gas_state) -> float:
-    """Convert a gas-referenced generation rate to the declared room state."""
-    return gas_state.at_state(ROOM_EVAL_T_K, ROOM_EVAL_P_PA)
+def source_at_eval_state(gas_state) -> float:
+    """Researcher-selected evaluation state. Label results accordingly."""
+    return gas_state.at_state(RESEARCHER_EVAL_T_K, RESEARCHER_EVAL_P_PA)
 
 
 # --- Energy reference values -------------------------------------------------
-# Code minima, not measured equipment performance.
+# ECBC 2017 Table 9-5 minimum efficiencies for STANDARD-DESIGN chillers. These
+# are code minima for a compliance baseline, not the efficiency of any ICU plant.
 CHILLER_COP_LT_260KW = 2.8   # ECBC 2017, 9.4.2.8, Table 9-5
 CHILLER_COP_GE_260KW = 3.0   # ECBC 2017, 9.4.2.8, Table 9-5
-FAN_MECH_EFF = {"ECSBC": 0.65, "ECSBC+": 0.70, "SuperECSBC": 0.75}  # ECSBC 2024, 6.3.1
+
+# The previous ECSBC entry conflated two different quantities: fan MECHANICAL
+# efficiency and motor IE efficiency CLASS are not interchangeable and cannot be
+# combined into one number.
+FAN_EFFICIENCY = _Blocked(
+    "fan total electrical efficiency at the duty point",
+    "the official ECSBC 2024 tables read directly for the mechanical-efficiency "
+    "requirement, and selected-equipment or measured data for actual fan, motor "
+    "and drive efficiency; IE class is not a fan efficiency",
+)
 
 # --- Blocked -----------------------------------------------------------------
 OUTDOOR_CO2_PPM = _Blocked(
@@ -135,6 +152,13 @@ OUTDOOR_CO2_PPM = _Blocked(
 SYSTEM_PRESSURE_DROP_PA = _Blocked(
     "system pressure drop at a stated duty point",
     "filter model clean/loaded dP plus duct and coil resistance",
+)
+K_DEPOSITION = _Blocked(
+    "size-resolved deposition rate for this room",
+    "a directly applicable deposition formulation plus the actual room "
+    "surface-to-volume ratio, surface/material conditions, airflow regime and "
+    "a compatible particle-size distribution. Generic non-ICU aerosol "
+    "literature may not be inserted as an ICU input under the no-proxy rule",
 )
 ICU_PM_SIZE_DISTRIBUTION = _Blocked(
     "nonviable ICU PM size distribution",

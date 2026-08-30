@@ -32,7 +32,7 @@ def test_full_outdoor_air_has_no_recirculation():
 def test_co2_excess_scales_inversely_with_outdoor_air():
     s1 = room.streams_from_ach(6.0, 1 / 3, I.ROOM_VOLUME_M3)
     s2 = room.streams_from_ach(6.0, 2 / 3, I.ROOM_VOLUME_M3)
-    src = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
+    src = I.source_at_eval_state(I.VCO2_PATIENT_KAGAN)
     e1 = room.co2_excess_steady_state(src, s1.outdoor)
     e2 = room.co2_excess_steady_state(src, s2.outdoor)
     assert abs(e1 / e2 - 2.0) < 1e-9
@@ -40,7 +40,7 @@ def test_co2_excess_scales_inversely_with_outdoor_air():
 
 def test_recurrence_converges_to_steady_state():
     s = room.streams_from_ach(6.0, 1 / 3, I.ROOM_VOLUME_M3)
-    src = 3 * I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
+    src = 3 * I.source_at_eval_state(I.VCO2_PATIENT_KAGAN)
     ss = room.co2_excess_steady_state(src, s.outdoor)
     c = 0.0
     for _ in range(400):  # 400 x 15 min
@@ -51,7 +51,7 @@ def test_recurrence_converges_to_steady_state():
 def test_recurrence_is_exact_not_euler():
     """One step of dt must equal two steps of dt/2 to machine precision."""
     s = room.streams_from_ach(6.0, 1 / 3, I.ROOM_VOLUME_M3)
-    src = 5 * I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
+    src = 5 * I.source_at_eval_state(I.VCO2_PATIENT_KAGAN)
     one = room.co2_excess_step(0.0, src, s.outdoor, I.ROOM_VOLUME_M3, 900)
     half = room.co2_excess_step(0.0, src, s.outdoor, I.ROOM_VOLUME_M3, 450)
     two = room.co2_excess_step(half, src, s.outdoor, I.ROOM_VOLUME_M3, 450)
@@ -76,7 +76,8 @@ def test_blocked_inputs_fail_closed():
     for blocked in (I.OUTDOOR_CO2_PPM, I.SYSTEM_PRESSURE_DROP_PA,
                     I.ICU_PM_SIZE_DISTRIBUTION, I.OCCUPANCY_SCHEDULE,
                     I.STAFF_VISITOR_DEMOGRAPHICS, I.PATIENT_EXHAUST_PATH,
-                    I.VCO2_PATIENT_ROUSING_PRESSURE_BASIS):
+                    I.VCO2_PATIENT_ROUSING_PRESSURE_BASIS,
+                    I.K_DEPOSITION, I.FAN_EFFICIENCY, I.ROOM_ACTUAL_T_P):
         try:
             float(blocked)
         except I.BlockedInput:
@@ -84,12 +85,45 @@ def test_blocked_inputs_fail_closed():
         raise AssertionError("blocked input did not raise")
 
 
-def test_guideline_simulatability():
-    assert BY_KEY["G1"].simulatable and BY_KEY["G1"].min_f_oa() == 2.0 / 6.0
-    # UK rows state no outdoor-air value
-    assert BY_KEY["G2"].min_f_oa() is None
-    # Victoria fixes the fraction but states no rate
-    assert not BY_KEY["G6"].simulatable and BY_KEY["G6"].min_f_oa() == 0.5
+def test_ashrae_2025_is_blocked():
+    """Only Addendum h to 170-2021 was supplied; the 2025 row is not in evidence."""
+    g = BY_KEY["G1"]
+    assert not g.simulatable and g.blocked
+    assert g.ach_total is None and g.filter_descriptor is None
+
+
+def test_htm_fresh_air_minimum_is_person_dependent():
+    """max(20% of supply, 10 L/s/person), per HTM 03-01:2021 s8.6."""
+    g = BY_KEY["G2"]
+    q = g.ach_total * I.ROOM_VOLUME_M3  # m3/h
+    assert abs(g.fresh_air_rule.controlling_m3_h(q, 3) - 150.0) < 1e-9
+    assert abs(g.fresh_air_rule.controlling_m3_h(q, 5) - 180.0) < 1e-9
+    assert abs(g.fresh_air_rule.controlling_m3_h(q, 11) - 396.0) < 1e-9
+
+
+def test_uk_outdoor_air_is_not_unbounded():
+    """Withdraws the earlier finding that f_OA could approach zero."""
+    g = BY_KEY["G2"]
+    q = g.ach_total * I.ROOM_VOLUME_M3
+    for n in (3, 5, 11):
+        assert g.fresh_air_rule.controlling_m3_h(q, n) / q >= 0.20
+
+
+def test_scottish_rule_has_no_person_term():
+    """SHTM 2014 supplies only the 20% fraction; the documents must not merge."""
+    assert BY_KEY["G4"].fresh_air_rule.min_l_s_per_person is None
+    assert BY_KEY["G2"].fresh_air_rule.min_l_s_per_person == 10.0
+
+
+def test_india_moh_2022_scenario_present():
+    g = BY_KEY["G9"]
+    assert (g.ach_total, g.ach_total_max) == (10.0, 12.0)
+    assert (g.ach_outdoor, g.ach_outdoor_max) == (4.0, 5.0)
+    assert g.rh_pct == (45, 65)
+
+
+def test_nabh_absence_is_not_proven():
+    assert BY_KEY["G8"].blocked and "does not prove absence" in BY_KEY["G8"].blocked
 
 
 # --- diurnal machinery -------------------------------------------------------
@@ -111,8 +145,8 @@ def test_co2_inversion_round_trips_to_machine_precision():
     """Generate CO2 from a known occupancy, invert, recover the occupancy."""
     V, dt, c_out = I.ROOM_VOLUME_M3, 900.0, 420.0
     q_oa = room.streams_from_ach(6.0, 1 / 3, V).outdoor
-    patient = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
-    per_person = I.source_at_room_state(I.VCO2_MALE_21_30_BY_MET[1.2])
+    patient = I.source_at_eval_state(I.VCO2_PATIENT_KAGAN)
+    per_person = I.source_at_eval_state(I.VCO2_MALE_21_30_BY_MET[1.2])
 
     known = [2, 2, 4, 7, 10, 10, 4, 2, 2, 3]  # non-patient occupancy
     trace = _forward_co2(known, q_oa, V, dt, c_out, patient, per_person)
@@ -130,8 +164,8 @@ def test_inversion_is_exact_not_finite_difference():
     """A finite-difference inversion would carry O(dt) error; this must not."""
     V, dt, c_out = I.ROOM_VOLUME_M3, 3600.0, 400.0  # deliberately coarse step
     q_oa = room.streams_from_ach(10.0, 0.5, V).outdoor
-    patient = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
-    pp = I.source_at_room_state(I.VCO2_MALE_21_30_BY_MET[1.4])
+    patient = I.source_at_eval_state(I.VCO2_PATIENT_KAGAN)
+    pp = I.source_at_eval_state(I.VCO2_MALE_21_30_BY_MET[1.4])
     known = [1, 6, 6, 1]
     trace = _forward_co2(known, q_oa, V, dt, c_out, patient, pp)
     rec = occ.equivalent_occupants(
