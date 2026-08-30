@@ -164,15 +164,23 @@ ICU_PM_SIZE_DISTRIBUTION = _Blocked(
     "nonviable ICU PM size distribution",
     "dN/dlogDp or dM/dlogDp with instrument channel boundaries",
 )
-STAFF_VISITOR_DEMOGRAPHICS = _Blocked(
-    "staff and visitor sex/age/met composition",
-    "an explicitly declared demographic scenario; Persily Table 4 varies by "
-    "sex and age and the male 21-<30 row cannot represent all occupants",
+# Two distinct things, deliberately separated.
+# A researcher declaration yields a LABELLED SENSITIVITY SCENARIO. It is not
+# representative ICU data and cannot support an actual-ICU prediction.
+STAFF_VISITOR_SCENARIO_DECLARED = None  # set to a declared composition to enable
+                                        # sensitivity runs only
+
+STAFF_VISITOR_OBSERVED = _Blocked(
+    "observed staff and visitor composition for THIS ICU",
+    "site roster composition plus activity categories and timing. Required for "
+    "any actual-ICU prediction; a declared scenario is a sensitivity case only",
 )
 PATIENT_EXHAUST_PATH = _Blocked(
-    "ventilator expiratory discharge path",
-    "site documentation of whether exhaled gas is released to the room or "
-    "removed by scavenging; VCO2 is a room source only if released to the room",
+    "ventilator and breathing-circuit configuration for THIS ICU",
+    "the specific ventilator model and circuit arrangement, and whether expired "
+    "gas is discharged into the room or connected to scavenging/exhaust. A "
+    "generic statement about how ICU ventilators usually behave is NOT "
+    "sufficient and must not be substituted",
 )
 OCCUPANCY_SCHEDULE = _Blocked(
     "diurnal occupancy schedule",

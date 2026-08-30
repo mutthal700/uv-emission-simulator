@@ -98,6 +98,13 @@ def non_patient_source(source_m3_s: Sequence[float], patient_rate_m3_s: float,
     return [max(s - patient, 0.0) for s in source_m3_s]
 
 
+def headcount(non_patient_source_m3_s: Sequence[float]) -> list:
+    """Actual non-patient headcount. GATED — see capabilities.headcount_inversion."""
+    from .capabilities import require
+    require("headcount_inversion")
+    raise AssertionError("unreachable while the capability is disabled")
+
+
 def equivalent_occupants(non_patient_source_m3_s: Sequence[float],
                          reference_rate_m3_s: float) -> list:
     """Convert non-patient source strength to EQUIVALENT OCCUPANTS.

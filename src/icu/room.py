@@ -44,6 +44,13 @@ def streams_from_ach(ach_total: float, f_oa: float, volume_m3: float) -> Streams
     return Streams(supply=supply, outdoor=f_oa * supply)
 
 
+def co2_prediction_patient_inclusive(*args, **kwargs):
+    """Patient-inclusive CO2 prediction. GATED — see capabilities."""
+    from .capabilities import require
+    require("co2_patient_inclusive")
+    raise AssertionError("unreachable while the capability is disabled")
+
+
 def co2_excess_steady_state(source_m3_s: float, q_oa_m3_s: float) -> float:
     """Steady-state CO2 excess above outdoor, in ppm.
 

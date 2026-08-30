@@ -28,15 +28,16 @@ assumption, proxy or placeholder.
 |---|---|
 | HTM general fresh-air provisions | **HTM 03-01:2021 §8.6 p41**, see also §9.120: fresh air ≥ 10 L/s·person; where recirculating, ≥ 20 % or the person-based figure, whichever is greater. **SHTM 03-01:2014 §2.37 p26** gives the 20 % fraction only. The two are not combined. |
 | The unnamed Indian national guideline | **MoHFW, *Guidelines for HDU & ICU*, March 2022**, p24 and Annexure III p47 — carried as **G9**, not merged with ISCCM |
+| ASHRAE critical-care row | **ANSI/ASHRAE/ASHE 170-2021, Table 7-1, Critical care patient care station**, on the researcher's attestation that the previously recorded figures are the 2021 row. They had been mislabelled 170-2025. **170-2025 is not in evidence and no scenario may claim it.** §6.4 topology is still not held for either edition |
 
 ## 0.2 Do these first
 
 | # | Gap | Why it matters | What closes it |
 |---|---|---|---|
-| 1 | **ASHRAE 170 Table 7-1 critical-care row** | ASHRAE 170 *does* carry this row — in 2021 and in 2025. Neither edition is in evidence: the only ASHRAE file held is **Addendum h to 170-2021**, which revises §8.1/8.2 and Tables 8-1/8-2 for outpatient and residential spaces and never touches Table 7-1. Without the row there is no US scenario at all. | The row itself, **with its edition named**. Paste it as you did the HTM rows. See the question in §0.8. |
-| 2 | **Patient ventilator exhaust path** | Decides whether patient VCO₂ is a room source **at all**. If the expiratory limb is scavenged, the largest CO₂ term disappears. | One line of site documentation. |
+| 1 | **Ventilator and breathing-circuit configuration for this ICU** | Decides whether patient VCO₂ is a room source **at all**, and gates patient-inclusive CO₂ entirely. | The specific ventilator model and circuit arrangement, and whether expired gas discharges to the room or to scavenging/exhaust. **A generic statement about ICU ventilators is not sufficient.** |
+| 2 | **Observed staff/visitor composition** | A researcher declaration yields a **labelled sensitivity scenario**, not representative ICU data. An actual-ICU prediction needs the real thing. | Site roster composition plus activity categories and timing. |
 | 3 | **Actual ICU room temperature and pressure** | Every CO₂ figure is currently evaluated at a *researcher-selected* 297.15 K / 101325 Pa. Until the room state is measured, no CO₂ result is source-backed. | Site measurement, or accept the molar route and report molar quantities. |
-| 4 | **Staff/visitor demographic scenario** | A **declaration you make**, not data to find. Persily's male 21–<30 row cannot stand for nurses, doctors, visitors and cleaners. | State the sex/age/met composition to model. |
+| 4 | **ASHRAE 170 §6.4 filter-bank topology** | The 170-2021 row gives MERV-14 but not **which airstream** it acts on — full supply, mixed air or recirculation only. | §6.4 of the edition held. |
 | 5 | **Five-city climate data** (hourly T, RH, PM₂.₅, PM₁₀) | Turns conditioning ratios into absolute energy and supplies `C_out` for PM. You hold this. | Send the files with temporal resolution stated. |
 | 6 | **Outdoor CO₂ baseline per zone** | Converts CO₂ **excess** to absolute ppm — the form any limit is written in. | A sourced value per zone. |
 | 7 | **Victoria HTG-2020-004 Reference Table 1 and 2** (30 May 2020) | G6 has 50 % outside air and remote HEPA but **no air-change rate**; §4.173 points at this table. | The missing tables. |
@@ -99,15 +100,30 @@ pressure drop — product data at the operating point is required.
 | Coil, dehumidification and reheat configuration | reheat penalty invisible; it falls hardest on the 10–12 ACH rows |
 | ICU sensible and latent loads | zero-load and high-load are **test cases**, not sourced inputs |
 
-## 0.8 Question outstanding
+## 0.8 Capability gating
 
-The values previously carried for G1 — 6 total / 2 outdoor ACH, N/R pressure,
-MERV-14, 30–60 % RH, 21–24 °C — were recorded as **170-2025 Table 7-1** on the
-basis of images that neither later audit could re-inspect. Since 170-2021 also
-carries a critical-care row: **which edition do you actually hold, and were
-those figures the 2021 row?** If they were, this is a relabelling rather than a
-re-sourcing, and G1 reopens as an explicitly 2021 scenario as soon as you paste
-the row with its locator.
+Input-level fail-closed is not enough: a capability can be unsafe even when each
+number exists, because the *combination* is unsupported. `src/icu/capabilities.py`
+disables whole classes of result and names the unmet prerequisites. It cannot be
+bypassed by supplying a substitute — **no blocked quantity receives a default
+value.**
+
+| Capability | State | Gated on |
+|---|---|---|
+| Patient-inclusive CO₂ prediction | **DISABLED** | ventilator/circuit configuration; actual room T and P |
+| Headcount from CO₂ inversion | **DISABLED** | observed composition; exhaust path |
+| Tier 2 size-resolved filtration | **DISABLED** | ICU PM size distribution; §6.4 airstream |
+| Deposition modelling | **DISABLED** | `k_dep` under the no-proxy rule; PM size distribution |
+| Stage C responsive control | **DISABLED** | occupancy schedule; observed composition |
+| Absolute energy | **DISABLED** | system ΔP; fan/motor/drive efficiency |
+
+Still available: the guideline register, minimum outdoor-air arithmetic from
+accepted provisions, **equivalent occupants** (explicitly not a headcount), and
+relative fan power as conditional arithmetic on an assumed identical system
+curve.
+
+**Consequently withdrawn:** the patient-inclusive CO₂ figures of 356 / 505 / 514
+/ 1356 ppm reported earlier. They remain withdrawn until gaps 1 and 3 close.
 
 ---
 

@@ -75,7 +75,7 @@ def test_fan_cube_law():
 def test_blocked_inputs_fail_closed():
     for blocked in (I.OUTDOOR_CO2_PPM, I.SYSTEM_PRESSURE_DROP_PA,
                     I.ICU_PM_SIZE_DISTRIBUTION, I.OCCUPANCY_SCHEDULE,
-                    I.STAFF_VISITOR_DEMOGRAPHICS, I.PATIENT_EXHAUST_PATH,
+                    I.STAFF_VISITOR_OBSERVED, I.PATIENT_EXHAUST_PATH,
                     I.VCO2_PATIENT_ROUSING_PRESSURE_BASIS,
                     I.K_DEPOSITION, I.FAN_EFFICIENCY, I.ROOM_ACTUAL_T_P):
         try:
@@ -85,11 +85,10 @@ def test_blocked_inputs_fail_closed():
         raise AssertionError("blocked input did not raise")
 
 
-def test_ashrae_2025_is_blocked():
-    """Only Addendum h to 170-2021 was supplied; the 2025 row is not in evidence."""
-    g = BY_KEY["G1"]
-    assert not g.simulatable and g.blocked
-    assert g.ach_total is None and g.filter_descriptor is None
+def test_no_scenario_claims_ashrae_170_2025():
+    """170-2025 is not in evidence; only the 2021 row is attested."""
+    for g in BY_KEY.values():
+        assert "170-2025" not in g.document, g.key
 
 
 def test_htm_fresh_air_minimum_is_person_dependent():
@@ -233,3 +232,75 @@ def test_molar_is_reference_state_independent():
     g = I.VCO2_MALE_21_30_BY_MET[1.2]
     other = I.GasState(g.at_state(300.0, 95000.0), 300.0, 95000.0, "arbitrary")
     assert abs(g.to_molar() - other.to_molar()) < 1e-18
+
+
+# --- capability gating -------------------------------------------------------
+from icu import capabilities as CAP
+
+
+def test_all_six_capabilities_are_disabled():
+    for name in ("co2_patient_inclusive", "headcount_inversion",
+                 "filtration_size_resolved", "deposition",
+                 "stage_c_control", "absolute_energy"):
+        assert not CAP.enabled(name), f"{name} unexpectedly enabled"
+
+
+def test_disabled_capability_names_its_prerequisites():
+    try:
+        CAP.require("co2_patient_inclusive")
+    except CAP.CapabilityDisabled as e:
+        msg = str(e)
+        assert "DISABLED" in msg and "Unmet prerequisites" in msg
+        assert "ventilator" in msg.lower()
+        return
+    raise AssertionError("capability did not raise")
+
+
+def test_headcount_is_gated_but_equivalent_occupants_is_not():
+    from icu import occupancy as o
+    try:
+        o.headcount([1e-6])
+    except CAP.CapabilityDisabled:
+        pass
+    else:
+        raise AssertionError("headcount was not gated")
+    # equivalent occupants remains available, correctly labelled
+    assert o.equivalent_occupants([4.8e-6], 4.8e-6) == [1.0]
+
+
+def test_patient_inclusive_co2_prediction_is_gated():
+    try:
+        room.co2_prediction_patient_inclusive()
+    except CAP.CapabilityDisabled:
+        return
+    raise AssertionError("patient-inclusive CO2 was not gated")
+
+
+def test_generic_ventilator_statement_is_not_acceptable():
+    try:
+        float(I.PATIENT_EXHAUST_PATH)
+    except I.BlockedInput as e:
+        assert "generic statement" in str(e).lower()
+        return
+    raise AssertionError("exhaust path not blocked")
+
+
+def test_declared_scenario_is_not_observed_data():
+    """A declaration enables sensitivity runs only; prediction needs site data."""
+    assert I.STAFF_VISITOR_SCENARIO_DECLARED is None
+    try:
+        float(I.STAFF_VISITOR_OBSERVED)
+    except I.BlockedInput as e:
+        assert "roster" in str(e).lower()
+        return
+    raise AssertionError("observed composition not blocked")
+
+
+def test_ashrae_170_2021_row_is_reinstated():
+    g = BY_KEY["G1"]
+    assert not g.blocked and g.simulatable
+    assert "170-2021" in g.document
+    assert (g.ach_total, g.ach_outdoor) == (6.0, 2.0)
+    assert g.temp_c == (21, 24) and g.rh_pct == (30, 60)
+    # topology still not held
+    assert "NOT HELD" in g.filter_descriptor
