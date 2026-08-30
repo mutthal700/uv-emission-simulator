@@ -67,6 +67,13 @@ SHTM_FRESH_AIR = FreshAirRule(
 )
 
 GUIDELINES = [
+    # Filter position: MERV-14 acts on MIXED air, i.e. one bank downstream of
+    # the point where recirculated and outdoor streams join, so it treats the
+    # whole supply. Stated by the researcher and consistent with the project
+    # duct schematic. NOTE: §6.4 of ASHRAE 170 is still not in evidence, so this
+    # is a RESEARCHER-DEFINED system topology. It must not be cited as an ASHRAE
+    # requirement until §6.4 is held.
+    #
     # Reinstated 2026-08-30 as ANSI/ASHRAE/ASHE 170-2021, on the researcher's
     # attestation that the previously recorded figures are the 2021 Table 7-1
     # row. They were formerly mislabelled 170-2025. 170-2025 remains NOT in
@@ -75,7 +82,7 @@ GUIDELINES = [
     Guideline("G1", "ANSI/ASHRAE/ASHE 170-2021",
               "Table 7-1, Critical care patient care station",
               ach_total=6.0, ach_outdoor=2.0,
-              filter_descriptor="MERV-14 minimum (airstream per §6.4, NOT HELD)",
+              filter_descriptor="MERV-14 minimum, acting on MIXED AIR",
               pressure="N/R", temp_c=(21, 24), rh_pct=(30, 60)),
     Guideline("G2", "HTM 03-01 Part A, 2021",
               "Table 3, Level 2/3 critical care individual room/open bays, p64",

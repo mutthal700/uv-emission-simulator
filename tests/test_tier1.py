@@ -302,5 +302,77 @@ def test_ashrae_170_2021_row_is_reinstated():
     assert "170-2021" in g.document
     assert (g.ach_total, g.ach_outdoor) == (6.0, 2.0)
     assert g.temp_c == (21, 24) and g.rh_pct == (30, 60)
-    # topology still not held
-    assert "NOT HELD" in g.filter_descriptor
+    # airstream now defined as mixed air (researcher-defined topology)
+    assert "MIXED AIR" in g.filter_descriptor
+
+
+# --- general multi-species balance -------------------------------------------
+def test_general_form_reduces_to_the_co2_case():
+    """CO2 has P=1, Z=1, k_dep=0, so B must collapse to Q_OA/V exactly."""
+    V = I.ROOM_VOLUME_M3
+    for ach, f in ((6.0, 1 / 3), (10.0, 0.2), (12.0, 0.5), (6.0, 1.0)):
+        st = room.streams_from_ach(ach, f, V)
+        a, b = room.coefficients(1e-6, st.supply, f, V)
+        assert abs(b - st.outdoor / V) < 1e-15, (ach, f, b, st.outdoor / V)
+        # and the steady state matches the CO2-specific helper
+        assert abs(room.steady_state(a, b)
+                   - room.co2_excess_steady_state(1e-6, st.outdoor) / 1e6) < 1e-15
+
+
+def test_perfect_filter_makes_all_supply_clean():
+    """P=0: every pass is scrubbed, so B = Q_s/V + k_dep regardless of f_OA."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(6.0, 0.2, V)
+    a, b = room.coefficients(1e-6, st.supply, 0.2, V, penetration=0.0,
+                             k_dep_per_s=1e-4)
+    assert abs(b - (st.supply / V + 1e-4)) < 1e-15
+
+
+def test_uv_enters_exactly_like_filter_penetration():
+    """In-duct UV is mathematically a filter on the viable bins."""
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(10.0, 0.3, V)
+    a1, b1 = room.coefficients(0.0, st.supply, 0.3, V, penetration=0.5,
+                               uv_survival=0.4, c_outdoor=1.0)
+    a2, b2 = room.coefficients(0.0, st.supply, 0.3, V, penetration=0.2,
+                               uv_survival=1.0, c_outdoor=1.0)
+    assert abs(a1 - a2) < 1e-18 and abs(b1 - b2) < 1e-18
+
+
+def test_more_removal_never_raises_steady_state():
+    V = I.ROOM_VOLUME_M3
+    st = room.streams_from_ach(6.0, 0.25, V)
+    prev = None
+    for p in (1.0, 0.8, 0.5, 0.2, 0.0):
+        a, b = room.coefficients(5e-6, st.supply, 0.25, V, penetration=p)
+        ss = room.steady_state(a, b)
+        if prev is not None:
+            assert ss <= prev + 1e-15
+        prev = ss
+
+
+def test_recirculation_cannot_help_a_dilution_only_species():
+    """With P=Z=1, changing f_OA is the only lever on CO2 and TVOC."""
+    V = I.ROOM_VOLUME_M3
+    lo = room.coefficients(5e-6, room.streams_from_ach(6.0, 0.2, V).supply, 0.2, V)
+    hi = room.coefficients(5e-6, room.streams_from_ach(12.0, 0.1, V).supply, 0.1, V)
+    # doubling supply while halving f_OA leaves outdoor air unchanged
+    assert abs(lo[1] - hi[1]) < 1e-15
+
+
+def test_pm_metrics_are_integrals_not_states():
+    from icu.species import reported_metric, VIABLE_BINS_UM
+    vals = [1.0] * 6
+    # bins wholly at or below 2.5 um: 0.65-1.1 and 1.1-2.1
+    assert reported_metric(vals, VIABLE_BINS_UM, 2.5) == 2.0
+    # below 10 um: all closed bins, the open >7.0 bin is excluded
+    assert reported_metric(vals, VIABLE_BINS_UM, 10.0) == 5.0
+
+
+def test_gases_declare_no_particulate_pathway():
+    from icu.species import SPECIES
+    for g in ("CO2", "TVOC"):
+        assert SPECIES[g].dilution_only
+    for v in ("bacteria", "fungi"):
+        assert SPECIES[v].uv_susceptible and SPECIES[v].binned
+    assert not SPECIES["PM"].uv_susceptible

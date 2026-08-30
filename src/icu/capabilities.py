@@ -45,9 +45,11 @@ CAPABILITIES = {
     "filtration_size_resolved": (
         "Tier 2 size-resolved filtration",
         lambda: _unmet(I.ICU_PM_SIZE_DISTRIBUTION),
-        "Filter classes are not efficiency curves. Needs manufacturer eta(dp) "
-        "at the duty point, and ASHRAE 170 section 6.4 for the airstream the "
-        "filter acts on.",
+        "Airstream is now defined: the bank acts on MIXED air (researcher-"
+        "defined topology; ASHRAE section 6.4 still not held, so it may not be "
+        "cited as an ASHRAE requirement). Still needs the ICU PM size "
+        "distribution to have bins at all, and manufacturer eta(dp) at the duty "
+        "point - a filter CLASS is not an efficiency curve.",
     ),
     "deposition": (
         "Deposition modelling",

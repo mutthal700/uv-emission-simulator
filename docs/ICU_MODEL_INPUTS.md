@@ -543,11 +543,88 @@ occupant composition and the actual room gas state, and energy on plant data.
 
 ---
 
-## 14. Diurnal model
+## 14. Concentration model
+
+### 14.1 State vector
+
+**PM₂.₅ and PM₁₀ are not state variables.** Filter penetration is
+size-dependent, so a mass metric cannot be penetrated. The state is carried in
+size bins; the metrics are **integrals over those bins at reporting time**. A
+bin is included only if it lies wholly at or below the cutoff — apportioning a
+partial bin needs the within-bin distribution, which is part of the blocked
+size-distribution evidence.
+
+| Species | State | Filter | Deposition | UVGI | Dilution |
+|---|---|---|---|---|---|
+| CO₂ | scalar, ppm | no | no | no | **yes — the only lever** |
+| TVOC | scalar | no | no | no | **yes — the only lever** |
+| PM | size bins → PM₂.₅/PM₁₀ as outputs | yes | yes | no | yes |
+| Bacteria | 6 Kim Andersen bins | yes | yes | **yes** | yes |
+| Fungi | 6 Kim Andersen bins | yes | yes | **yes** | yes |
+
+### 14.2 The balance, with the filter on mixed air
+
+The main bank sits downstream of the mixing point, so it treats the whole
+supply — **researcher-defined system topology**; ASHRAE §6.4 is still not held
+and this must not be cited as an ASHRAE requirement. Then
+
+    C_supply,i = P_i · Z_i · [ f_OA·C_out,i + (1 − f_OA)·C_room,i ]
+
+Substituting into the room balance and collecting gives `dC/dt = A − B·C`:
+
+    A_i = [ S_i + Q_s·P_i·Z_i·f_OA·C_out,i ] / V
+    B_i = (Q_s/V)·(1 − P_i·Z_i·(1 − f_OA)) + k_dep,i
+
+`P_i` is filter penetration and `Z_i` in-duct UV survival, both single-pass
+fractions where 1.0 removes nothing. The exact recurrence applies unchanged per
+species, so master D10 is preserved.
+
+**Two structural consequences.**
+
+*The form reduces exactly to the CO₂ case.* With `P = Z = 1` and `k_dep = 0`,
+`B` collapses to `Q_OA/V` — verified to machine precision in the test suite.
+That is why recirculation cannot touch CO₂ or TVOC, and why `f_OA` is their only
+lever.
+
+*In-duct UV is mathematically a filter on the viable bins.* `P` and `Z` enter as
+a product, so a lamp is indistinguishable from a better filter acting on the
+same bins. It is **not** a room removal term, and no equivalent-ACH credit is
+taken. `P = 0.5, Z = 0.4` and `P = 0.2, Z = 1.0` give identical coefficients —
+also tested.
+
+At 10 ACH and `f_OA = 0.2`, single-pass removal maps to effective removal as:
+
+| `P·Z` | `B` (1/h) |
+|---|---|
+| 1.0 (nothing removed) | 2.00 |
+| 0.5 | 6.00 |
+| 0.0 (perfect) | 10.00 |
+
+The floor is the outdoor-air rate; the ceiling is the full supply rate.
+
+### 14.3 Temporal drivers — what each species needs
+
+The CO₂ temporal shape is **not** transferable to other species. Each needs its
+own evidenced route.
+
+| Species | Temporal driver | State |
+|---|---|---|
+| CO₂ | occupancy, via inversion (§14.4) or schedule | both routes **blocked** |
+| TVOC | unknown; no ICU concentration of any kind | **blocked** |
+| PM | `C_out,i(t)` from the climate files **plus** indoor sources and resuspension | outdoor part opens when the files arrive; indoor part **blocked** |
+| Bacteria, fungi | no sourced route. Occupancy shaping is not evidenced, and magnitude calibration does not supply a profile | **blocked** |
+
+**The only temporal driver currently reachable is outdoor climate, for PM.**
+Every indoor driver is blocked. Until they close, runs are **declared
+steady-state scenarios**, not a diurnal profile.
+
+### 14.4 Two routes to occupancy, when it opens
+
+
 
 Occupancy `N(t)` carries the time variation; sources follow from it.
 
-### 14.1 Two routes to `N(t)`
+#### Routes
 
 **Route A — schedule.** `occupancy.profile_from_events` builds `N(t)` from named
 events, each carrying a `source` field naming the document, section and
@@ -580,7 +657,7 @@ quantity is non-patient **source strength**, not headcount — dividing by one
 reference rate yields **"equivalent occupants"**, valid only if every
 non-patient shares that rate, which Persily shows they do not.
 
-### 14.2 Propagating `N(t)` to the other pollutants
+#### Propagation
 
 **Corrected 2026-08-29.** The CO₂-derived temporal profile is used **for CO₂
 only**. It is not transferred to bacteria, fungi, PM or TVOC without direct ICU
@@ -599,7 +676,7 @@ Steady occupancy values may be used **only as explicitly declared simulation
 scenarios**. They must not be described as a validated diurnal occupancy
 profile.
 
-### 14.3 What the diurnal model cannot yet do
+#### Remaining limits
 
 Route A is blocked on the SOP. Route B needs a measured ICU CO₂ trace *with its
 ventilation conditions* — Tier A source-reconstruction studies qualify, Tier B
