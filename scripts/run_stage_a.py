@@ -12,20 +12,26 @@ from icu import room, energy
 from icu.scenarios import GUIDELINES
 
 V = I.ROOM_VOLUME_M3
-MET_STAFF = 1.2  # DECLARED parameter, not sourced: ISO 8996 is blocked
+MET_STAFF = 1.2  # DECLARED scenario parameter: ISO 8996 is blocked
+# Persily Table 4 male 21-<30 is a declared demographic SCENARIO, not a generic
+# staff/visitor class. Sources are converted to the declared room state.
 
 
 def co2_source(n_total: int, met: float = MET_STAFF) -> float:
     """One patient at the measured ICU rate, the remainder at Persily."""
     others = max(n_total - I.BED_COUNT, 0)
-    return I.VCO2_PATIENT_KAGAN + others * I.VCO2_STAFF_BY_MET[met]
+    patient = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
+    other = I.source_at_room_state(I.VCO2_MALE_21_30_BY_MET[met])
+    return patient + others * other
 
 
 def main() -> None:
     print("=" * 78)
     print("STAGE A / TIER 1 - single-bed ICU, V = %.1f m3" % V)
     print("CO2 excess above outdoor (ppm). Patient at Kagan measured rate;")
-    print("others at Persily Table 4, %.1f met (declared, ISO 8996 blocked)." % MET_STAFF)
+    print("others as Persily Table 4 MALE 21-<30 at %.1f met - a declared" % MET_STAFF)
+    print("demographic scenario, not a generic staff class. Sources converted")
+    print("from their gas reference states to %.2f K / %.0f Pa." % (I.ROOM_EVAL_T_K, I.ROOM_EVAL_P_PA))
     print("=" * 78)
 
     occ = [("base min", I.OCCUPANCY_BASE_MIN),

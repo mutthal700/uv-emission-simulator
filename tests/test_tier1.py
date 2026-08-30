@@ -32,7 +32,7 @@ def test_full_outdoor_air_has_no_recirculation():
 def test_co2_excess_scales_inversely_with_outdoor_air():
     s1 = room.streams_from_ach(6.0, 1 / 3, I.ROOM_VOLUME_M3)
     s2 = room.streams_from_ach(6.0, 2 / 3, I.ROOM_VOLUME_M3)
-    src = I.VCO2_PATIENT_KAGAN
+    src = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
     e1 = room.co2_excess_steady_state(src, s1.outdoor)
     e2 = room.co2_excess_steady_state(src, s2.outdoor)
     assert abs(e1 / e2 - 2.0) < 1e-9
@@ -40,7 +40,7 @@ def test_co2_excess_scales_inversely_with_outdoor_air():
 
 def test_recurrence_converges_to_steady_state():
     s = room.streams_from_ach(6.0, 1 / 3, I.ROOM_VOLUME_M3)
-    src = 3 * I.VCO2_PATIENT_KAGAN
+    src = 3 * I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
     ss = room.co2_excess_steady_state(src, s.outdoor)
     c = 0.0
     for _ in range(400):  # 400 x 15 min
@@ -51,7 +51,7 @@ def test_recurrence_converges_to_steady_state():
 def test_recurrence_is_exact_not_euler():
     """One step of dt must equal two steps of dt/2 to machine precision."""
     s = room.streams_from_ach(6.0, 1 / 3, I.ROOM_VOLUME_M3)
-    src = 5 * I.VCO2_PATIENT_KAGAN
+    src = 5 * I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
     one = room.co2_excess_step(0.0, src, s.outdoor, I.ROOM_VOLUME_M3, 900)
     half = room.co2_excess_step(0.0, src, s.outdoor, I.ROOM_VOLUME_M3, 450)
     two = room.co2_excess_step(half, src, s.outdoor, I.ROOM_VOLUME_M3, 450)
@@ -74,7 +74,9 @@ def test_fan_cube_law():
 
 def test_blocked_inputs_fail_closed():
     for blocked in (I.OUTDOOR_CO2_PPM, I.SYSTEM_PRESSURE_DROP_PA,
-                    I.ICU_PM_SIZE_DISTRIBUTION, I.OCCUPANCY_SCHEDULE):
+                    I.ICU_PM_SIZE_DISTRIBUTION, I.OCCUPANCY_SCHEDULE,
+                    I.STAFF_VISITOR_DEMOGRAPHICS, I.PATIENT_EXHAUST_PATH,
+                    I.VCO2_PATIENT_ROUSING_PRESSURE_BASIS):
         try:
             float(blocked)
         except I.BlockedInput:
@@ -109,14 +111,15 @@ def test_co2_inversion_round_trips_to_machine_precision():
     """Generate CO2 from a known occupancy, invert, recover the occupancy."""
     V, dt, c_out = I.ROOM_VOLUME_M3, 900.0, 420.0
     q_oa = room.streams_from_ach(6.0, 1 / 3, V).outdoor
-    patient = I.VCO2_PATIENT_KAGAN
-    per_person = I.VCO2_STAFF_BY_MET[1.2]
+    patient = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
+    per_person = I.source_at_room_state(I.VCO2_MALE_21_30_BY_MET[1.2])
 
     known = [2, 2, 4, 7, 10, 10, 4, 2, 2, 3]  # non-patient occupancy
     trace = _forward_co2(known, q_oa, V, dt, c_out, patient, per_person)
 
     src = occ.co2_inversion(trace, q_oa, V, dt, c_out)
-    recovered = occ.occupancy_from_source(src, patient, per_person)
+    recovered = occ.equivalent_occupants(
+        occ.non_patient_source(src, patient), per_person)
 
     assert len(recovered) == len(known)
     for got, want in zip(recovered, known):
@@ -127,11 +130,12 @@ def test_inversion_is_exact_not_finite_difference():
     """A finite-difference inversion would carry O(dt) error; this must not."""
     V, dt, c_out = I.ROOM_VOLUME_M3, 3600.0, 400.0  # deliberately coarse step
     q_oa = room.streams_from_ach(10.0, 0.5, V).outdoor
-    patient, pp = I.VCO2_PATIENT_KAGAN, I.VCO2_STAFF_BY_MET[1.4]
+    patient = I.source_at_room_state(I.VCO2_PATIENT_KAGAN)
+    pp = I.source_at_room_state(I.VCO2_MALE_21_30_BY_MET[1.4])
     known = [1, 6, 6, 1]
     trace = _forward_co2(known, q_oa, V, dt, c_out, patient, pp)
-    rec = occ.occupancy_from_source(
-        occ.co2_inversion(trace, q_oa, V, dt, c_out), patient, pp)
+    rec = occ.equivalent_occupants(
+        occ.non_patient_source(occ.co2_inversion(trace, q_oa, V, dt, c_out), patient), pp)
     for got, want in zip(rec, known):
         assert abs(got - want) < 1e-9
 
@@ -174,3 +178,24 @@ def test_gases_have_no_filter_or_uv_pathway():
         assert "filtration" not in mech and "UVGI" not in mech
     for viable in ("bacteria", "fungi"):
         assert "UVGI" in CHARACTER[viable][2]
+
+
+def test_altunalan_is_excluded():
+    """The article's prose and Table 2 conflict; no value may enter the model."""
+    assert not any("ALTUNALAN" in n.upper() for n in dir(I))
+
+
+def test_gas_state_conversion_matches_audit():
+    """Persily -> Draeger STPD must reproduce the audit's derived values."""
+    expected = {1.0: 3.890587e-6, 1.2: 4.788414e-6,
+                1.4: 5.586483e-6, 1.6: 6.384552e-6}
+    for met, want in expected.items():
+        got = I.VCO2_MALE_21_30_BY_MET[met].at_state(I.STPD_DRAEGER_T, I.STPD_DRAEGER_P)
+        assert abs(got - want) < 1e-12, (met, got, want)
+
+
+def test_molar_is_reference_state_independent():
+    """The same physical rate expressed at two states gives the same mol/s."""
+    g = I.VCO2_MALE_21_30_BY_MET[1.2]
+    other = I.GasState(g.at_state(300.0, 95000.0), 300.0, 95000.0, "arbitrary")
+    assert abs(g.to_molar() - other.to_molar()) < 1e-18

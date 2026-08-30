@@ -542,22 +542,37 @@ is measured (§11.1):
 
     N_non-patient(t) = (S(t) − S_patient) / G_person
 
-Verified by round trip: a known occupancy is used to generate a CO₂ trace, the
-trace is inverted, and the occupancy is recovered to within 1e-9 — including at
-a deliberately coarse 1-hour step, which a finite-difference inversion would
-fail.
+Round-tripped to 1e-9 on a noiseless synthetic trace, including at a coarse
+1-hour step that a finite-difference inversion would not survive. **This is an
+implementation test, not validation** against independent occupancy, ventilation
+or CO₂ measurements.
+
+Two limits on what the inversion returns. It is exact only where `Q_OA`, `C_out`
+and `S` are constant across the interval; where the source varies within an
+interval the result is an exponentially weighted interval **average**, so a
+one-hour interval cannot resolve events inside that hour. And the recoverable
+quantity is non-patient **source strength**, not headcount — dividing by one
+reference rate yields **"equivalent occupants"**, valid only if every
+non-patient shares that rate, which Persily shows they do not.
 
 ### 17.2 Propagating `N(t)` to the other pollutants
 
+**Corrected 2026-08-29.** The CO₂-derived temporal profile is used **for CO₂
+only**. It is not transferred to bacteria, fungi, PM or TVOC without direct ICU
+evidence supporting that pollutant-specific relationship. Calibrating a
+bacterial or fungal *magnitude* against a reported concentration does not
+validate an occupancy-shaped *temporal profile* for it.
+
 | Pollutant | Route | Status |
 |---|---|---|
-| CO₂ | patient at the measured ICU rate plus non-patients at Persily | closed |
-| Bacteria, fungi | shape from `N(t)`; magnitude calibrated so the simulated distribution reproduces the Kim ICU values | needs the ventilation conditions at Kim's measurement site to calibrate against |
-| PM | outdoor-driven component from the climate series, indoor resuspension scaled on `N(t)` | needs the size distribution (§15) |
-| TVOC | dilution only | no concentration evidence at all |
+| CO₂ | patient at the measured ICU rate plus a declared non-patient scenario | machinery closed; inputs blocked (§17.4) |
+| Bacteria, fungi | **no sourced temporal route** | occupancy-shaped profile is not evidenced; magnitude calibration alone does not supply one |
+| PM | needs pollutant-specific outdoor penetration, indoor sources, resuspension, deposition, filtration and size-resolved removal | blocked |
+| TVOC | dilution only | blocked, no evidence at all |
 
-Magnitudes are **calibrated against measured distributions**, never asserted as
-per-person emission factors, which no ICU study reports.
+Steady occupancy values may be used **only as explicitly declared simulation
+scenarios**. They must not be described as a validated diurnal occupancy
+profile.
 
 ### 17.3 What the diurnal model cannot yet do
 
@@ -566,3 +581,46 @@ ventilation conditions* — Tier A source-reconstruction studies qualify, Tier B
 studies with incomplete HVAC metadata give shape but not magnitude. Until one of
 those arrives the machinery is built and tested but unfed, and Stage A proceeds
 on the steady-state occupancy levels of §1 instead.
+
+
+---
+
+## 18. Gas reference states — correction of 2026-08-29
+
+Volumetric generation rates are meaningless without their reference state, and
+the three sources do not share one.
+
+| Source | Reference state | Locator |
+|---|---|---|
+| Kagan patient, 244.5 ± 85.9 mL/min | **Dräger Evita 4 STPD**: 0 °C, 1013 hPa, dry | Dräger IfU Evita 4 SW 4.n, Ed. 5, 2015-01, doc 9039485, Technical data, p176 |
+| Rousing patient, 273 ± 63 mL/min | GE E-CAiOVX: standard temperature 0 °C, dry — **numeric pressure not stated** | GE CARESCAPE Clinical Reference 2040384-003A, ch.12, pp12-4 to 12-5 |
+| Persily male 21–<30 | 273 K, 101 kPa | Persily & de Jonge (2017) Table 4, p875 |
+| **Altunalan** | **EXCLUDED** — Results prose and Table 2 contradict each other on VCO₂ vs VO₂ | BMC Anesthesiology 26:89 (2026), p4 vs p5 |
+
+Persily converts exactly to the Dräger basis with no empirical input:
+
+    V_Dräger = V_Persily × (273.15/273) × (101/101.3) = V_Persily × 0.997586322858
+
+reproduced by the model to 1e-12. Rousing is **not** pressure-harmonised: GE
+states STPD and 0 °C dry but no numeric pressure, so the conversion is blocked.
+
+### 18.1 Model implementation
+
+Sources are held as `GasState` objects carrying their own reference `T` and `P`,
+with `to_molar()` for reference-state-independent work and `at_state()` for
+ideal-gas conversion. The room balance uses flows and ppm at actual room
+conditions, so every source is converted to a **declared** evaluation state of
+297.15 K and 101325 Pa before entering it.
+
+**This correction is material, not cosmetic.** Converting from the STPD and
+Persily bases to the room state raises the CO₂ source by **+8.8 %** (patient)
+and **+8.5 %** (Persily scenario), which moves the Stage A result at G1/G5 base
+occupancy from 328 to **356 ppm** excess and at surge from 1250 to **1356 ppm**.
+
+### 18.2 Newly blocked
+
+| Item | Closes with |
+|---|---|
+| Rousing pressure basis | a GE document stating the numeric standard pressure for the relevant monitor revision |
+| Staff/visitor demographics | a declared sex/age/met composition; the Persily male 21–<30 row cannot represent all occupants |
+| Patient exhaust path | site documentation of whether ventilator expiratory gas is released to the room or scavenged |

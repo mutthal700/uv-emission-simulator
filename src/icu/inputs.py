@@ -44,19 +44,82 @@ DUCT_SIDE_M = 0.3048
 DUCT_AREA_M2 = DUCT_SIDE_M ** 2  # 0.092903, exactly 1 sq ft
 DUCT_LENGTH_M = 6.0
 
-# --- CO2 generation, per person, m3/s ---------------------------------------
-# Patient: direct ICU measurement of mechanically ventilated adults.
-# Unit conversion from source-reported mL/min; derived, not source-reported.
-VCO2_PATIENT_KAGAN = 244.5 / 60 / 1e6        # Kagan, Crit Care 22:186 (2018)
-VCO2_PATIENT_KAGAN_SD = 85.9 / 60 / 1e6
-VCO2_PATIENT_ROUSING = 273.0 / 60 / 1e6      # Rousing, Ann Intensive Care 6:16 (2016)
-VCO2_PATIENT_ALTUNALAN = 188.362 / 60 / 1e6  # Altunalan, BMC Anesthesiol 26:89 (2026)
+# --- CO2 generation, per person ----------------------------------------------
+# Per verified_co2_generation_source_audit, 2026-08-29. Volumetric rates are
+# meaningless without their gas reference state, so each carries one.
+#
+# Altunalan et al. (2026) is EXCLUDED: the article's Results prose and Table 2
+# contradict one another on VCO2 versus VO2, and the source does not permit a
+# defensible choice between them.
 
-# Staff and visitors: Persily & de Jonge, Indoor Air 27:868-879 (2017), Table 4,
-# male 21-<30, at 273 K and 101 kPa. The met level is a DECLARED parameter with
-# a sensitivity range, not a sourced ICU value: ISO 8996:2021 is blocked.
-PERSILY_M21_30 = {1.0: 0.0039, 1.2: 0.0048, 1.4: 0.0056, 1.6: 0.0064}
-VCO2_STAFF_BY_MET = {met: v / 1000 for met, v in PERSILY_M21_30.items()}  # m3/s
+R_GAS = 8.314462618  # J/(mol K)
+
+
+class GasState:
+    """A volumetric rate with its reference temperature and pressure."""
+
+    def __init__(self, v_dot_m3_s: float, t_k: float, p_pa: float, basis: str):
+        self.v_dot_m3_s = v_dot_m3_s
+        self.t_k = t_k
+        self.p_pa = p_pa
+        self.basis = basis
+
+    def to_molar(self) -> float:
+        """mol/s. Preferred internal quantity: no reference-state ambiguity."""
+        return self.p_pa * self.v_dot_m3_s / (R_GAS * self.t_k)
+
+    def at_state(self, t_k: float, p_pa: float) -> float:
+        """Ideal-gas conversion to another dry-gas state, m3/s."""
+        return self.v_dot_m3_s * (t_k / self.t_k) * (self.p_pa / p_pa)
+
+
+# Draeger Evita 4 reports CO2 production at STPD: 0 degC, 1013 hPa, dry.
+# Instructions for Use, Edition 5, 2015-01, doc 9039485, Technical data, p176.
+STPD_DRAEGER_T = 273.15
+STPD_DRAEGER_P = 101300.0
+
+# Persily & de Jonge (2017) Table 4 basis, stated in the text preceding Table 4.
+PERSILY_T = 273.0
+PERSILY_P = 101000.0
+
+# Patient, Kagan et al., Critical Care 22:186 (2018). Six-hour block mean from
+# the Evita 4 ventilator, cohort mean - not a universal patient emission factor.
+VCO2_PATIENT_KAGAN = GasState(244.5 / 60 / 1e6, STPD_DRAEGER_T, STPD_DRAEGER_P,
+                              "Draeger Evita 4 STPD")
+VCO2_PATIENT_KAGAN_SD = 85.9 / 60 / 1e6
+
+# Patient, Rousing et al., Ann Intensive Care 6:16 (2016). GE E-CAiOVX module;
+# GE states standard temperature 0 degC and dry gas but NOT a numeric standard
+# pressure, so this value must not be pressure-harmonised. Left unstated.
+VCO2_PATIENT_ROUSING_M3_S = 273.0 / 60 / 1e6
+VCO2_PATIENT_ROUSING_SD = 63.0 / 60 / 1e6
+VCO2_PATIENT_ROUSING_PRESSURE_BASIS = _Blocked(
+    "numeric standard pressure for the GE E-CAiOVX reference state",
+    "a GE document stating the numeric standard pressure for the relevant "
+    "monitor revision; until then Rousing cannot be exactly harmonised",
+)
+
+# Occupant SCENARIO, not a generic staff or visitor class: Persily & de Jonge
+# (2017), Indoor Air 27(5):868-879, Table 4, MALE AGE 21 TO <30 row, p875.
+# Applies to that sex/age class at Persily's mean body mass. Met level is a
+# declared scenario parameter - ISO 8996:2021 is blocked.
+VCO2_MALE_21_30_BY_MET = {
+    met: GasState(v, PERSILY_T, PERSILY_P, "Persily 273 K / 101 kPa")
+    for met, v in ((1.0, 3.90e-6), (1.2, 4.80e-6), (1.4, 5.60e-6), (1.6, 6.40e-6))
+}
+
+# --- Declared model evaluation state -----------------------------------------
+# Room flows and ppm are at actual room conditions, so gas-referenced sources
+# must be converted to this state before entering the balance. These are
+# DECLARED model parameters, not sourced values.
+ROOM_EVAL_T_K = 297.15    # 24 degC, top of the common guideline band
+ROOM_EVAL_P_PA = 101325.0
+
+
+def source_at_room_state(gas_state) -> float:
+    """Convert a gas-referenced generation rate to the declared room state."""
+    return gas_state.at_state(ROOM_EVAL_T_K, ROOM_EVAL_P_PA)
+
 
 # --- Energy reference values -------------------------------------------------
 # Code minima, not measured equipment performance.
@@ -76,6 +139,16 @@ SYSTEM_PRESSURE_DROP_PA = _Blocked(
 ICU_PM_SIZE_DISTRIBUTION = _Blocked(
     "nonviable ICU PM size distribution",
     "dN/dlogDp or dM/dlogDp with instrument channel boundaries",
+)
+STAFF_VISITOR_DEMOGRAPHICS = _Blocked(
+    "staff and visitor sex/age/met composition",
+    "an explicitly declared demographic scenario; Persily Table 4 varies by "
+    "sex and age and the male 21-<30 row cannot represent all occupants",
+)
+PATIENT_EXHAUST_PATH = _Blocked(
+    "ventilator expiratory discharge path",
+    "site documentation of whether exhaled gas is released to the room or "
+    "removed by scavenging; VCO2 is a room source only if released to the room",
 )
 OCCUPANCY_SCHEDULE = _Blocked(
     "diurnal occupancy schedule",

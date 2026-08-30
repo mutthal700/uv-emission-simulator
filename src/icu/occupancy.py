@@ -9,8 +9,17 @@ Two independent routes to N(t):
    Needs no schedule at all: occupancy is already encoded in the CO2 signal.
 
 The inversion uses the exact solution of the balance rather than a finite
-difference, so it is consistent with the forward recurrence and round-trips to
-machine precision.
+difference, so it is consistent with the forward recurrence.
+
+Two limits on what the inversion returns:
+
+- It is exact only where outdoor airflow, outdoor CO2 and the source are
+  constant across the interval. If the source varies within an interval, the
+  result is an exponentially weighted interval AVERAGE, not the instantaneous
+  source, so a one-hour interval cannot resolve events inside that hour.
+- Round-tripping a synthetic trace through these same equations is an
+  IMPLEMENTATION test. It is not validation against independent occupancy,
+  ventilation or CO2 measurements.
 """
 
 import math
@@ -78,15 +87,29 @@ def co2_inversion(trace_ppm: Sequence[float], q_oa_m3_s: float, volume_m3: float
     return out
 
 
-def occupancy_from_source(source_m3_s: Sequence[float], patient_rate_m3_s: float,
-                          per_person_m3_s: float, n_patients: int = 1) -> list:
-    """Split an inverted CO2 source into patient and non-patient occupancy.
+def non_patient_source(source_m3_s: Sequence[float], patient_rate_m3_s: float,
+                       n_patients: int = 1) -> list:
+    """Non-patient CO2 SOURCE STRENGTH, m3/s, at the same gas state as the input.
 
     The single-bed room fixes the patient count, so the patient contribution is
-    known and can be subtracted. Staff and visitors are not separable from CO2
-    alone; they are returned as one non-patient count.
+    known and can be subtracted. This is a source strength, not a headcount.
     """
-    if per_person_m3_s <= 0:
-        raise ValueError("per-person rate must be positive")
     patient = n_patients * patient_rate_m3_s
-    return [max((s - patient) / per_person_m3_s, 0.0) for s in source_m3_s]
+    return [max(s - patient, 0.0) for s in source_m3_s]
+
+
+def equivalent_occupants(non_patient_source_m3_s: Sequence[float],
+                         reference_rate_m3_s: float) -> list:
+    """Convert non-patient source strength to EQUIVALENT OCCUPANTS.
+
+    This is not a measured or inferred headcount. Dividing by a single reference
+    rate is valid only if every non-patient occupant shares that rate. Persily
+    shows generation varies with sex, age and metabolic rate, so nurses,
+    doctors, visitors, cleaners and therapists cannot be collapsed into one
+    verified per-person rate without composition and activity evidence.
+
+    Label every result from this function "equivalent occupants".
+    """
+    if reference_rate_m3_s <= 0:
+        raise ValueError("reference rate must be positive")
+    return [s / reference_rate_m3_s for s in non_patient_source_m3_s]
