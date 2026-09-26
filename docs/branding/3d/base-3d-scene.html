@@ -1,0 +1,219 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:transparent;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+
+const q = new URLSearchParams(location.search);
+const mode = q.get('mode') || 'icon';          // icon | logo
+const theme = q.get('theme') || 'light';       // light | dark (text colour)
+const W = +q.get('w') || 1600, H = +q.get('h') || 1600;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.42;
+
+const key = new THREE.DirectionalLight(0xffffff, 2.8);
+key.position.set(-3, 9, 7);
+key.castShadow = true;
+key.shadow.mapSize.set(4096, 4096);
+key.shadow.bias = -0.0004;
+key.shadow.radius = 6;
+Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 0.5, far: 30 });
+scene.add(key);
+const rim = new THREE.DirectionalLight(0x9fd8ff, 0.8);
+rim.position.set(6, 2, -4);
+scene.add(rim);
+scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+
+const NAVY = 0x0B3C5D;
+const navyMat = new THREE.MeshPhysicalMaterial({ color: NAVY, roughness: 0.32, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.12 });
+
+// ---------- Fan tile ----------
+function roundedRect(w, h, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+
+function cup(geo, k) { // curve a flat blade like a real leaf / fan blade
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + k * p.getX(i) ** 2 - 0.12 * p.getY(i) ** 2 * 0.2);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function makeBlade(color) {
+  // smooth, curved leaf surface: u runs base->tip, v across the width
+  const geo = new THREE.PlaneGeometry(1, 1, 48, 96);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const v = pos.getX(i) * 2, u = pos.getY(i) + 0.5;
+    const half = 0.3 * Math.pow(Math.sin(Math.PI * u), 0.85) * (1 - 0.25 * u);
+    const cx = 0.18 * u * u;
+    const x = cx + v * half;
+    const z = 0.9 * (v * half) ** 2 + 0.05 * Math.sin(Math.PI * u) - 0.03 * u;
+    pos.setXYZ(i, x, 0.16 + u * 1.18, z);
+  }
+  geo.computeVertexNormals();
+  const c = new THREE.Color(color);
+  const mat = new THREE.MeshPhysicalMaterial({ color: c, side: THREE.DoubleSide, roughness: 0.38, clearcoat: 0.5, clearcoatRoughness: 0.3, sheen: 0.25, sheenColor: c.clone().offsetHSL(0, 0, 0.2) });
+  const blade = new THREE.Mesh(geo, mat);
+  blade.castShadow = blade.receiveShadow = true;
+
+  const vein = new THREE.CatmullRomCurve3([0.04, 0.3, 0.55, 0.8, 0.97].map((u) => new THREE.Vector3(0.18 * u * u, 0.16 + u * 1.18, 0.05 * Math.sin(Math.PI * u) - 0.03 * u + 0.012)));
+  const vGeo = new THREE.TubeGeometry(vein, 64, 0.013, 8);
+  const veinMesh = new THREE.Mesh(vGeo, new THREE.MeshPhysicalMaterial({ color: c.clone().multiplyScalar(0.62), roughness: 0.5 }));
+  veinMesh.castShadow = true;
+
+  const g = new THREE.Group();
+  g.add(blade, veinMesh);
+  // pitch the blade around its own long axis, like a real fan
+  const axis = new THREE.Vector3(0.12, 1, 0).normalize();
+  g.setRotationFromAxisAngle(axis, 0.42);
+  const pivot = new THREE.Group();
+  pivot.add(g);
+  return pivot;
+}
+
+function makeTile() {
+  const tile = new THREE.Group();
+  const base = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(roundedRect(3.2, 3.2, 0.72), { depth: 0.28, bevelEnabled: true, bevelThickness: 0.09, bevelSize: 0.09, bevelSegments: 8, curveSegments: 32 }),
+    navyMat);
+  base.castShadow = base.receiveShadow = true;
+  tile.add(base);
+  const front = 0.28 + 0.09;
+
+  // shroud ring around the fan
+  const ringMat = new THREE.MeshPhysicalMaterial({ color: 0x2a6f96, roughness: 0.25, metalness: 0.6, clearcoat: 1 });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.42, 0.045, 24, 160), ringMat);
+  ring.position.z = front + 0.02; ring.castShadow = ring.receiveShadow = true;
+  tile.add(ring);
+
+  const fan = new THREE.Group();
+  [0x1E9BE0, 0x12A38A, 0x45C05E].forEach((c, i) => {
+    const b = makeBlade(c);
+    b.rotation.z = -i * (2 * Math.PI / 3) + 0.15;
+    fan.add(b);
+  });
+  fan.position.z = front + 0.22;
+  fan.scale.setScalar(1.08);
+  tile.add(fan);
+
+  const chrome = new THREE.MeshPhysicalMaterial({ color: 0xe8eef2, metalness: 1, roughness: 0.18 });
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.2, 64), chrome);
+  hub.rotation.x = Math.PI / 2; hub.position.z = front + 0.18; hub.castShadow = true;
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.24, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), chrome);
+  cap.rotation.x = Math.PI / 2; cap.scale.set(1, 0.55, 1); cap.position.z = front + 0.28; cap.castShadow = true;
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.07, 32, 16), navyMat);
+  dot.position.z = front + 0.4;
+  tile.add(hub, cap, dot);
+  return tile;
+}
+
+const root = new THREE.Group();
+scene.add(root);
+const tile = makeTile();
+root.add(tile);
+
+// soft contact shadow on an invisible floor
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.22 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const camera = new THREE.PerspectiveCamera(28, W / H, 0.1, 100);
+
+async function build() {
+  if (mode === 'icon') {
+    tile.rotation.set(-0.1, 0.3, 0);
+    floor.position.y = -1.85;
+    camera.position.set(0, 0.6, 10.2);
+    camera.lookAt(0.1, -0.1, 0);
+    return;
+  }
+  // logo: tile + 3D lettering + subtitle
+  const loader = new FontLoader();
+  const load = (u) => new Promise((r) => loader.load(u, r));
+  const bold = await load('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/fonts/helvetiker_bold.typeface.json');
+  tile.scale.setScalar(0.9);
+  tile.rotation.set(-0.05, 0.3, 0);
+
+  const text = new THREE.Group();
+  const letterMat = theme === 'dark'
+    ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.3, clearcoat: 1 })
+    : navyMat;
+  let x = 0;
+  for (const ch of 'BASE') {
+    const g = new TextGeometry(ch, { font: bold, size: 1.55, depth: 0.32, curveSegments: 16, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.035, bevelSegments: 6 });
+    g.computeBoundingBox();
+    const m = new THREE.Mesh(g, letterMat);
+    m.position.x = x - g.boundingBox.min.x;
+    m.castShadow = m.receiveShadow = true;
+    text.add(m);
+    x += g.boundingBox.max.x - g.boundingBox.min.x + 0.34;
+  }
+  const textW = x - 0.34;
+  text.position.set(0, 0.05, 0);
+
+  floor.visible = false;
+  const bar = new THREE.Mesh(new THREE.ExtrudeGeometry(roundedRect(1.3, 0.12, 0.06), { depth: 0.08, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02 }),
+    new THREE.MeshPhysicalMaterial({ color: 0x2BA84A, roughness: 0.3, clearcoat: 1 }));
+  bar.position.set(0.67, -0.28, 0.1); bar.castShadow = true;
+
+  const subMat = new THREE.MeshPhysicalMaterial({ color: theme === 'dark' ? 0xCFE3EE : 0x3D5A6C, roughness: 0.5 });
+  const lines = ['BUILDING AIR-CONDITIONING AND SUSTAINABLE', 'ENVIRONMENT RESEARCH LABORATORY'];
+  const sub = new THREE.Group();
+  lines.forEach((t, i) => {
+    let sx = 0;
+    for (const ch of t) { // manual letter-spacing
+      if (ch === ' ') { sx += 0.14; continue; }
+      const g = new TextGeometry(ch, { font: bold, size: 0.235, depth: 0.03, curveSegments: 8 });
+      g.computeBoundingBox();
+      const m = new THREE.Mesh(g, subMat);
+      m.position.set(sx - g.boundingBox.min.x, -0.78 - i * 0.4, 0.05);
+      m.castShadow = true;
+      sub.add(m);
+      sx += g.boundingBox.max.x - g.boundingBox.min.x + 0.045;
+    }
+  });
+
+  const words = new THREE.Group();
+  words.add(text, bar, sub);
+  words.position.x = 2.25;
+  tile.position.x = 0;
+  root.add(words);
+
+  const box = new THREE.Box3().setFromObject(root);
+  const c = box.getCenter(new THREE.Vector3());
+  root.position.x -= c.x;
+  root.position.y -= c.y;
+  floor.position.y = box.min.y - c.y - 0.02;
+  camera.position.set(0, 0.3, 12.6);
+  camera.lookAt(0, 0, 0);
+}
+
+await build();
+renderer.render(scene, camera);
+window.READY = true;
+</script>
+</body></html>
