@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="BASE badge">
+<title>BASE badge</title>
+<circle cx="60" cy="60" r="60" fill="#0B3C5D"/><g transform="translate(25.6 19) scale(0.82)"><g>
+  <path d="M10 20 L36 10 V90 H10 Z" fill="#FFFFFF"/>
+  <g fill="#0B3C5D">
+    <rect x="16" y="30" width="13" height="7" rx="1"/><rect x="16" y="46" width="13" height="7" rx="1"/>
+    <rect x="16" y="60" width="13" height="7" rx="1"/><rect x="16" y="74" width="13" height="7" rx="1"/>
+  </g>
+  <path d="M34 15 H55 A15 15 0 0 1 55 45 H34" fill="none" stroke="#5EC2F2" stroke-width="10"/>
+  <path d="M34 55 H59 A15 15 0 0 1 59 85 H34" fill="none" stroke="#7AD08A" stroke-width="10"/>
+</g></g>
+</svg>
