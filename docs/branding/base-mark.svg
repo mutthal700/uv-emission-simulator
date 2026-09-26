@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="BASE lab mark">
+  <title>BASE mark</title>
+  <defs>
+    <linearGradient id="air" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1E88C8"/>
+      <stop offset="1" stop-color="#2BA84A"/>
+    </linearGradient>
+  </defs>
+  <!-- Building: gabled outline, open at the right wall so air can flow out -->
+  <path d="M84 104 H20 V52 L60 18 L100 52 V70" fill="none" stroke="#0B3C5D" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Conditioned airflow streams -->
+  <path d="M32 62 C42 54 50 70 60 62 S78 54 88 62" fill="none" stroke="url(#air)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M32 78 C42 70 50 86 60 78 S78 70 90 78 C96 82 102 82 108 78" fill="none" stroke="url(#air)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M32 94 C40 88 46 98 54 94" fill="none" stroke="#1E88C8" stroke-width="6" stroke-linecap="round"/>
+  <!-- Leaf: sustainability -->
+  <path d="M66 97 C66 83 78 79 94 81 C94 95 82 101 66 97 Z" fill="#2BA84A"/>
+  <path d="M68 96 C74 91 80 87 88 85" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+</svg>
