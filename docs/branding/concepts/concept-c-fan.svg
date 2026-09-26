@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 180" width="600" height="180" role="img" aria-label="BASE — Building Air-conditioning and Sustainable Environment Research Laboratory">
+  <title>BASE fan-leaf logo</title>
+  <g transform="translate(90 90)">
+    <rect x="-80" y="-80" width="160" height="160" rx="36" fill="#0B3C5D"/>
+    <g transform="scale(1.12)">
+      <path d="M0 -8 C-10 -26 -8 -52 10 -70 C24 -50 20 -24 0 -8 Z" fill="#4FC3F7"/>
+      <path d="M0 -8 C-10 -26 -8 -52 10 -70 C24 -50 20 -24 0 -8 Z" fill="#26A69A" transform="rotate(120)"/>
+      <path d="M0 -8 C-10 -26 -8 -52 10 -70 C24 -50 20 -24 0 -8 Z" fill="#7BD389" transform="rotate(240)"/>
+    </g>
+    <g fill="none" stroke="#0B3C5D" stroke-width="2" stroke-linecap="round" opacity=".55" transform="scale(1.12)">
+      <path d="M0 -12 C2 -30 4 -46 8 -62"/>
+      <path d="M0 -12 C2 -30 4 -46 8 -62" transform="rotate(120)"/>
+      <path d="M0 -12 C2 -30 4 -46 8 -62" transform="rotate(240)"/>
+    </g>
+    <circle r="11" fill="#FFFFFF"/>
+    <circle r="4" fill="#0B3C5D"/>
+  </g>
+  <text x="200" y="92" font-family="Montserrat, 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif" font-size="76" font-weight="800" letter-spacing="8" fill="#0B3C5D">BASE</text>
+  <text font-family="Montserrat, 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" letter-spacing="1.2" fill="#3D5A6C">
+    <tspan x="203" y="124">BUILDING AIR-CONDITIONING AND SUSTAINABLE</tspan>
+    <tspan x="203" y="144">ENVIRONMENT RESEARCH LABORATORY</tspan>
+  </text>
+</svg>

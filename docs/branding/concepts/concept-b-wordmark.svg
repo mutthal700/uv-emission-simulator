@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 220" width="520" height="220" role="img" aria-label="BASE — Building Air-conditioning and Sustainable Environment Research Laboratory">
+  <title>BASE wordmark</title>
+  <defs>
+    <linearGradient id="airB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E88C8"/><stop offset="1" stop-color="#2BA84A"/></linearGradient>
+  </defs>
+  <g fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" transform="translate(58 20)">
+    <!-- B -->
+    <path d="M10 8 V112 H52 A26 26 0 0 0 52 60 H10 M10 60 H46 A26 26 0 0 0 46 8 H10" stroke="#0B3C5D"/>
+    <!-- A as a gable roof -->
+    <path d="M100 112 L150 8 L200 112" stroke="#0B3C5D"/>
+    <path d="M118 80 C130 70 140 88 152 80 S172 70 184 80" stroke="#1E88C8" stroke-width="9"/>
+    <!-- S as an airflow stream -->
+    <path d="M296 22 C282 4 238 4 238 34 C238 62 298 54 298 86 C298 118 250 120 234 98" stroke="url(#airB)"/>
+    <!-- E with a leaf for the middle arm -->
+    <path d="M396 8 H340 V112 H396 M340 8 V60" stroke="#0B3C5D"/>
+    <path d="M338 60 C352 42 380 40 402 48 C390 70 362 76 338 60 Z" fill="#2BA84A" stroke="none"/>
+    <path d="M346 60 C362 55 378 52 394 49" stroke="#FFFFFF" stroke-width="2.5"/>
+  </g>
+  <text text-anchor="middle" font-family="Montserrat, 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" letter-spacing="1.4" fill="#3D5A6C">
+    <tspan x="260" y="176">BUILDING AIR-CONDITIONING AND SUSTAINABLE</tspan>
+    <tspan x="260" y="198">ENVIRONMENT RESEARCH LABORATORY</tspan>
+  </text>
+</svg>
